@@ -5,9 +5,11 @@
     "my-patro-app": "0.0.1",
     "@patro-io/cms": "0.0.6",
     "@patro-io/create-cms": "0.0.6",
-    "patro/templates": "2.0.0"
+    "patro/templates": "2.0.0",
+    "@patro-io/templates": "2.0.0"
   },
   "changesets": [
+    "tasty-lands-start",
     "tough-humans-carry"
   ]
 }
