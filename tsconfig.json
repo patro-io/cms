@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "allowJs": true,
+    "checkJs": false,
+    "jsx": "preserve",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+    "noEmitOnError": true,
+    "useDefineForClassFields": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "types": ["@cloudflare/workers-types", "vitest/globals"],
+    "paths": {
+      "@patro-io/cms": ["./packages/core/src/index.ts"],
+      "@patro-io/cms/*": ["./packages/core/src/*"],
+      "patro/templates": ["./packages/templates/src/index.ts"],
+      "patro/templates/*": ["./packages/templates/src/*"]
+    }
+  },
+  "include": ["packages/*/src/**/*", "tests/**/*"],
+  "exclude": [
+    "node_modules",
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/.wrangler",
+    "my-patro-app"
+  ]
+}

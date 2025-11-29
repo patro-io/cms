@@ -1,0 +1,39 @@
+{
+  "name": "my-patro-app",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A PatroCMS headless CMS application",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev 2>&1 | grep -v '\\[wrangler:inf\\]'",
+    "deploy": "wrangler d1 migrations apply DB --remote --env production && wrangler deploy --env production",
+    "logs": "wrangler tail --env production",
+    "db:reset": "tsx scripts/db-reset.ts",
+    "db:migrate": "wrangler d1 migrations apply DB",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:studio": "drizzle-kit studio",
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "update": "pnpm install @patro-io/cms@latest --save",
+    "update:beta": "pnpm install @patro-io/cms@beta --save",
+    "seed": "tsx scripts/seed-admin.ts"
+  },
+  "dependencies": {
+    "effect": "^3.19.4",
+    "@patro-io/cms": "file:../packages/core"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250620.0",
+    "@types/node": "^20.19.1",
+    "drizzle-kit": "^0.30.0",
+    "drizzle-orm": "^0.44.2",
+    "hono": "^4.7.3",
+    "typescript": "^5.8.3",
+    "vitest": "^2.1.8",
+    "wrangler": "^4.45.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

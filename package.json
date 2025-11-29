@@ -1,0 +1,60 @@
+{
+  "name": "patro-cms",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter my-patro-app dev",
+    "build:core": "pnpm --filter @patro-io/cms build",
+    "db:migrate:local": "pnpm --filter my-patro-app run db:migrate:local",
+    "clean:db": "tsx scripts/db-clear.ts",
+    "seed": "pnpm --filter my-patro-app run seed",
+    "clean": "rm -rf node_modules .wrangler dist coverage .dev.vars packages/*/node_modules packages/*/dist packages/*/.wrangler my-patro-app/node_modules my-patro-app/.wrangler",
+    "clean:start": "fuser -k 8787/tcp || true && pnpm clean && pnpm install && pnpm build:core && pnpm db:migrate:local && pnpm dev",
+    "start": "fuser -k 8787/tcp || true && pnpm build:core && pnpm dev",
+    "deploy": "fuser -k 8787/tcp || true && pnpm --filter my-patro-app run deploy",
+    "clean:deploy": "fuser -k 8787/tcp || true && tsx scripts/db-clear.ts && pnpm --filter my-patro-app run deploy",
+    "log": "npx wrangler tail patrocms",
+    "test": "pnpm --filter @patro-io/cms test",
+    "test:cov": "pnpm --filter @patro-io/cms test:cov",
+    "test:watch": "pnpm --filter @patro-io/cms test:watch",
+    "e2e": "playwright test --config=tests/playwright.config.ts",
+    "e2e:ui": "playwright test --config=tests/playwright.config.ts --ui",
+    "type-check": "pnpm --filter @patro-io/cms type-check",
+    "lint": "pnpm run type-check",
+    "changeset": "changeset",
+    "version": "changeset version && pnpm install --no-frozen-lockfile",
+    "release": "pnpm run build:core && changeset publish"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.9",
+    "@libsql/client": "^0.15.9",
+    "clsx": "^2.1.1",
+    "drizzle-kit": "^0.31.2",
+    "drizzle-orm": "^0.44.7",
+    "highlight.js": "^11.11.1",
+    "hono": "^4.10.4",
+    "marked": "^16.4.1",
+    "motion": "^12.23.22",
+    "semver": "^7.7.3"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.7",
+    "@cloudflare/workers-types": "^4.20251014.0",
+    "@playwright/test": "^1.53.1",
+    "@types/node": "^24.9.2",
+    "@types/semver": "^7.7.0",
+    "@vitest/coverage-v8": "^4.0.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.3",
+    "playwright": "^1.53.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.5",
+    "wrangler": "^4.45.4"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "tsc --noEmit"
+    ]
+  }
+}

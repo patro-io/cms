@@ -1,0 +1,13 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "my-patro-app": "0.0.1",
+    "@patro-io/cms": "0.0.6",
+    "@patro-io/create-cms": "0.0.6",
+    "patro/templates": "2.0.0"
+  },
+  "changesets": [
+    "tough-humans-carry"
+  ]
+}

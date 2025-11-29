@@ -1,0 +1,57 @@
+{
+  "id": "ai-translator",
+  "name": "AI Translator",
+  "version": "1.0.0-beta.1",
+  "description": "AI-driven automatic content translation using Cloudflare Workers AI",
+  "author": {
+    "name": "Patro",
+    "email": "team@patro.io",
+    "url": "https://patro.io"
+  },
+  "license": "MIT",
+  "category": "content",
+  "icon": "language",
+  "isCore": true,
+  "compatibility": "^2.0.0",
+  "dependencies": [],
+  "adminMenu": {
+    "label": "AI Translator",
+    "path": "/admin/plugins/ai-translator/settings",
+    "icon": "language",
+    "order": 86
+  },
+  "routes": [
+    {
+      "path": "/admin/plugins/ai-translator",
+      "description": "AI Translator admin interface",
+      "requiresAuth": true
+    }
+  ],
+  "hooks": [
+    {
+      "name": "content:create",
+      "description": "Triggers AI translation after content creation"
+    },
+    {
+      "name": "content:update",
+      "description": "Triggers AI translation after content update"
+    }
+  ],
+  "settings": {
+    "enabled": true,
+    "defaultSourceLanguage": "cs",
+    "targetLanguages": ["en", "de", "fr", "es", "it", "pl"],
+    "autoTranslate": true,
+    "translateOnCreate": true,
+    "translateOnUpdate": false,
+    "aiModel": "@cf/meta/m2m100-1.2b",
+    "translatableFields": [
+      "title",
+      "content",
+      "excerpt",
+      "description",
+      "meta_title",
+      "meta_description"
+    ]
+  }
+}

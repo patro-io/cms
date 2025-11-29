@@ -1,0 +1,32 @@
+{
+  "id": "hello-world",
+  "name": "Hello World",
+  "version": "1.0.0-beta.1",
+  "description": "A simple Hello World plugin demonstration",
+  "author": {
+  "name": "Patro",
+  "email": "team@patro.io",
+  "url": "https://patro.io"
+},
+  "homepage": "https://patro.io/cms/plugins/hello-world",
+  "repository": "https://github.com/patro-io/cms/tree/main/src/plugins/core-plugins/hello-world-plugin",
+  "license": "MIT",
+  "category": "utilities",
+  "tags": ["demo", "example", "hello-world"],
+  "dependencies": [],
+  "settings": {},
+  "hooks": {
+    "onActivate": "activate",
+    "onDeactivate": "deactivate"
+  },
+  "routes": [],
+  "permissions": {
+    "hello-world:view": "View Hello World page"
+  },
+  "adminMenu": {
+    "label": "Hello World",
+    "icon": "hand-raised",
+    "path": "/admin/hello-world",
+    "order": 90
+  }
+}
