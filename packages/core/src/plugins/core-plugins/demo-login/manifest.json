@@ -1,0 +1,24 @@
+{
+  "id": "demo-login-plugin",
+  "name": "Demo Login",
+  "version": "1.0.0-beta.1",
+  "description": "Quick demo login functionality for testing and demonstrations",
+  "author": {
+  "name": "Patro",
+  "email": "team@patro.io",
+  "url": "https://patro.io"
+},
+  "homepage": "https://patro.io/cms/plugins/demo-login",
+  "repository": "https://github.com/patro-io/cms/tree/main/src/plugins/core-plugins",
+  "license": "MIT",
+  "category": "utilities",
+  "tags": ["demo", "testing", "development"],
+  "dependencies": ["core-auth"],
+  "settings": {},
+  "hooks": {
+    "onActivate": "activate",
+    "onDeactivate": "deactivate"
+  },
+  "routes": [],
+  "permissions": {}
+}

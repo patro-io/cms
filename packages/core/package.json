@@ -1,0 +1,116 @@
+{
+  "name": "@patro-io/cms",
+  "version": "0.0.7-beta.0",
+  "description": "Core framework for Patro: An Edge-first Headless CMS built with Effect TS for Cloudflare Workers",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./services": {
+      "types": "./dist/services.d.ts",
+      "import": "./dist/services.js",
+      "require": "./dist/services.cjs"
+    },
+    "./middleware": {
+      "types": "./dist/middleware.d.ts",
+      "import": "./dist/middleware.js",
+      "require": "./dist/middleware.cjs"
+    },
+    "./routes": {
+      "types": "./dist/routes.d.ts",
+      "import": "./dist/routes.js",
+      "require": "./dist/routes.cjs"
+    },
+    "./templates": {
+      "types": "./dist/templates.d.ts",
+      "import": "./dist/templates.js",
+      "require": "./dist/templates.cjs"
+    },
+    "./plugins": {
+      "types": "./dist/plugins.d.ts",
+      "import": "./dist/plugins.js",
+      "require": "./dist/plugins.cjs"
+    },
+    "./utils": {
+      "types": "./dist/utils.d.ts",
+      "import": "./dist/utils.js",
+      "require": "./dist/utils.cjs"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js",
+      "require": "./dist/types.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "migrations",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "cms",
+    "headless-cms",
+    "cloudflare",
+    "workers",
+    "edge",
+    "typescript",
+    "hono",
+    "content-management",
+    "api",
+    "patro"
+  ],
+  "author": "Patro <team@patro.io> (https://patro.io)",
+  "license": "FSL-1.1-MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patro-io/cms.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/patro-io/cms/issues"
+  },
+  "homepage": "https://patro.io",
+  "peerDependencies": {
+    "@cloudflare/workers-types": "^4.0.0",
+    "drizzle-orm": "^0.44.0",
+    "hono": "^4.0.0"
+  },
+  "dependencies": {
+    "effect": "^3.19.4",
+    "highlight.js": "^11.11.1",
+    "marked": "^16.4.1",
+    "semver": "^7.7.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251014.0",
+    "@types/node": "^24.9.2",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.10.4",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
