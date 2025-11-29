@@ -4,6 +4,9 @@
 
 [![Version](https://img.shields.io/npm/v/@patro-io/create-cms)](https://www.npmjs.com/package/@patro-io/create-cms)
 [![License: FSL-1.1-MIT](https://img.shields.io/badge/License-FSL--1.1--MIT-yellow.svg)](../../LICENSE)
+[![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](../../README.md)
+
+> **⚠️ Beta Notice:** PatroCMS is currently in Beta. Use with caution in production environments.
 
 ## Quick Start
 
@@ -18,7 +21,9 @@ That's it! Follow the interactive prompts and you'll have a running PatroCMS app
 `@patro-io/create-cms` sets up everything you need for a modern headless CMS on Cloudflare's edge:
 
 - ✅ **Project scaffolding** - Complete project structure
-- ✅ **Effect Architecture** - 100% Pure Effect TypeScript foundation
+- ✅ **Effect Architecture** - Built with a significant portion in Pure Effect for reliability
+- ✅ **Multilingual Ready** - Admin interface supports multiple languages out-of-the-box
+- ✅ **AI Powered** - Ready for AI-assisted content creation and translation
 - ✅ **Cloudflare resources** - Optionally create D1 database and R2 bucket
 - ✅ **Configuration** - Auto-configured wrangler.jsonc
 - ✅ **Dependencies** - Installs all required packages (including `@patro-io/cms` core)

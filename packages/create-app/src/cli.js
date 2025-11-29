@@ -415,18 +415,20 @@ async function copyTemplate(templateName, targetDir, options) {
   });
 
   // Update package.json
-  const packageJsonPath = path.join(targetDir, "package.json");
-  const packageJson = await fs.readJson(packageJsonPath);
-  packageJson.name = options.projectName;
-  packageJson.version = "0.0.1";
-  packageJson.private = true;
+  const targetPackageJsonPath = path.join(targetDir, "package.json");
+  const targetPackageJson = await fs.readJson(targetPackageJsonPath);
+  
+  targetPackageJson.name = options.projectName;
+  targetPackageJson.version = "0.0.1";
+  targetPackageJson.private = true;
 
-  packageJson.dependencies = {
-    "@patro-io/cms": "^0.0.2",
-    ...packageJson.dependencies,
+  // ZMĚNA ZDE: Použití globální proměnné VERSION načtené na začátku souboru
+  targetPackageJson.dependencies = {
+    "@patro-io/cms": `^${VERSION}`, 
+    ...targetPackageJson.dependencies,
   };
 
-  await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+  await fs.writeJson(targetPackageJsonPath, targetPackageJson, { spaces: 2 });
 
   // Rename gitignore.template to .gitignore
   const gitignoreTemplatePath = path.join(targetDir, "gitignore.template");

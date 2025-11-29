@@ -4,8 +4,11 @@
 [![Effect](https://img.shields.io/badge/Effect-100%25-blue)](https://effect.website)
 [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-orange)](https://workers.cloudflare.com)
 [![License: FSL-1.1-MIT](https://img.shields.io/badge/License-FSL--1.1--MIT-yellow.svg)](LICENSE)
+[![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/patro-io/cms)
 
 **The First 100% Pure Effect Headless CMS for Cloudflare Workers.**
+
+> **⚠️ Beta Software:** PatroCMS is currently in active development (Beta). While the core architecture is stable, APIs and features may evolve. Use with caution in production environments.
 
 PatroCMS is a modern, enterprise-grade headless CMS built specifically for the edge. It leverages the power of **Effect** (TypeScript) to provide unmatched type safety, error handling, and resilience, all running on **Cloudflare's global network**.
 
@@ -15,7 +18,7 @@ PatroCMS is a modern, enterprise-grade headless CMS built specifically for the e
 
 ## 🌟 Why Effect Revolution?
 
-PatroCMS has undergone a complete architectural rewrite ("Effect Revolution") to eliminate `async/await` and `Promise` unpredictability in favor of a purely functional, effect-based architecture.
+PatroCMS stands out by being built with a **significant portion of its codebase in Pure Effect**. We have undergone a complete architectural rewrite ("Effect Revolution") to eliminate `async/await` and `Promise` unpredictability in favor of a purely functional, effect-based architecture.
 
 - **🛡️ Bulletproof Error Handling**: Every error is typed and tracked. No more unhandled promise rejections or unknown exceptions.
 - **🧩 Dependency Injection**: Native service composition using Effect Context.
@@ -36,6 +39,10 @@ PatroCMS has undergone a complete architectural rewrite ("Effect Revolution") to
 - **Workflow**: Draft → Review → Published → Archived states.
 - **Media Library**: R2-backed storage with automatic image optimization.
 - **Live Preview**: Real-time content previewing.
+
+### 🌍 Globalization & AI
+- **Multilingual Administration**: The admin interface is fully localized, supporting multiple languages for a global editorial team.
+- **AI-Powered Content**: Native integration with AI tools to generate, translate, and enhance content across languages automatically.
 
 ## 🛠️ Technology Stack
 

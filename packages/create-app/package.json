@@ -1,6 +1,6 @@
 {
   "name": "@patro-io/create-cms",
-  "version": "0.0.6",
+  "version": "0.0.7-beta.0",
   "description": "Create a new PatroCMS application with zero configuration",
   "type": "module",
   "bin": {
