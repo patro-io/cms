@@ -1,5 +1,6 @@
 {
-  "name": "patro/templates",
+  "name": "@patro-io/templates",
+  "private": true,
   "version": "2.0.0",
   "description": "Template system for PatroCMS CMS",
   "type": "module",

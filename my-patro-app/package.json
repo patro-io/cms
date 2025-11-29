@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "effect": "^3.19.4",
-    "@patro-io/cms": "file:../packages/core"
+    "@patro-io/cms": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250620.0",

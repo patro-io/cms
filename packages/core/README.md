@@ -5,6 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/@patro-io/cms)](https://www.npmjs.com/package/@patro-io/cms)
 [![License](https://img.shields.io/npm/l/@patro-io/cms)](./LICENSE)
 [![Effect](https://img.shields.io/badge/Effect-TS-blue)](https://effect.website)
+[![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](../../README.md)
 
 ---
 
@@ -17,6 +18,9 @@ PatroCMS is a **100% Pure Effect TypeScript** framework that brings functional p
 - **Zero Runtime Errors** - Compile-time guarantees and exhaustive error handling
 - **Edge-Native** - Runs on Cloudflare Workers with sub-50ms response times globally
 - **Plugin Ecosystem** - Extensible architecture with Effect-based hooks and middleware
+- **Multilingual & AI** - Built-in support for multilingual content and AI-powered translations
+
+> **⚠️ Beta Software:** PatroCMS is currently in active development (Beta). While the core architecture is stable, APIs and features may evolve. Use with caution in production environments.
 
 **This is not your typical CMS.** PatroCMS embraces functional programming concepts while remaining practical for real-world applications.
 
@@ -644,10 +648,10 @@ Converts to MIT after 2 years.
 
 ## 🏆 Status
 
-**Current Version**: `0.0.1` (Alpha)  
-**Effect Coverage**: 100% ✅  
-**Production Ready**: No (Alpha testing)  
-**Effect TS Version**: `^3.19.4`  
+**Current Version**: `0.1.0` (Beta)
+**Effect Coverage**: 100% ✅
+**Production Ready**: Use with caution (Beta)
+**Effect TS Version**: `^3.19.4`
 
 ---
 

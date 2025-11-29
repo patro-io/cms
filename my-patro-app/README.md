@@ -8,6 +8,14 @@ A modern, enterprise-grade headless CMS built with [PatroCMS](https://github.com
 
 **Powered by 100% Pure Effect TypeScript architecture for unmatched reliability.**
 
+> **⚠️ Beta Notice:** This project is currently in Beta. APIs and features may evolve.
+
+## ✨ Key Features
+
+- **🌍 Multilingual Admin**: Fully localized administration interface.
+- **🤖 AI Content Generation**: Built-in tools for AI-powered content creation and translation.
+- **🛡️ Pure Effect**: Built on a foundation of pure functional programming for maximum stability.
+
 ## Getting Started
 
 ### Prerequisites

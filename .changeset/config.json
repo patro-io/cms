@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config/schema.json",
-  "changelog": "@changesets/cli/changelog",
+  "changelog": ["@changesets/changelog-github", { "repo": "pefen/patro-cms" }],
   "commit": false,
   "fixed": [
     ["@patro-io/cms", "@patro-io/create-cms"]
