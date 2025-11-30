@@ -7,6 +7,7 @@
 import { Hono } from 'hono'
 import type { Context } from 'hono'
 import type { D1Database, KVNamespace, R2Bucket } from '@cloudflare/workers-types'
+import { Effect } from 'effect'
 import {
   apiRoutes,
   apiMediaRoutes,
@@ -32,6 +33,7 @@ import { createDatabaseToolsAdminRoutes } from './plugins/core-plugins/database-
 import { createSeedDataAdminRoutes } from './plugins/core-plugins/seed-data-plugin/admin-routes'
 import { emailPlugin } from './plugins/core-plugins/email-plugin'
 import type { TranslateFn, Locale, I18nService } from './services/i18n'
+import { FullAppConfig } from './config/app-config.js'
 
 // ============================================================================
 // Type Definitions
@@ -130,6 +132,58 @@ export type PatroCMSApp = Hono<{ Bindings: Bindings; Variables: Variables }>
  */
 export function createPatroCMSApp(config: PatroCMSConfig = {}): PatroCMSApp {
   const app = new Hono<{ Bindings: Bindings; Variables: Variables }>()
+
+  // Config validation middleware - validates ENV variables on first request
+  // This ensures the app fails fast if required config is missing
+  let configValidated = false
+  app.use('*', async (c, next) => {
+    if (!configValidated) {
+      // Validate config on first request using makeAppConfigLayer
+      const { makeAppConfigLayer } = await import('./config/config-provider.js')
+      const configLayer = makeAppConfigLayer(c.env as any)
+      
+      const validationProgram = Effect.gen(function* () {
+        // Load config to trigger validation
+        const config = yield* FullAppConfig
+        
+        // Log successful validation in development
+        if (c.env.ENVIRONMENT === 'development') {
+          console.log('✅ Configuration validated successfully')
+        }
+        
+        return config
+      })
+
+      // Run validation with config layer
+      const result = await Effect.runPromise(
+        validationProgram.pipe(
+          Effect.provide(configLayer),
+          Effect.catchAll((error) => {
+            console.error('❌ Configuration validation failed:', error)
+            console.error('Please check your environment variables. See docs/effect/ENV_VARIABLES.md for details.')
+            return Effect.fail(error)
+          })
+        )
+      ).catch((error) => {
+        // If validation fails, return error response
+        return c.json({
+          error: 'Configuration validation failed',
+          message: 'Required environment variables are missing or invalid',
+          details: String(error),
+          hint: 'Check docs/effect/ENV_VARIABLES.md for required configuration'
+        }, 500)
+      })
+
+      // If validation failed (returned Response), return it
+      if (result && typeof result === 'object' && 'headers' in result) {
+        return result as Response
+      }
+
+      configValidated = true
+    }
+    
+    return await next()
+  })
 
   // Metrics middleware - track all requests for real-time analytics
   // Must be one of the first middleware to run to capture all requests.

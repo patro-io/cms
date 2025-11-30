@@ -218,39 +218,30 @@ authRoutes.post('/register', (c) => {
     const authService = yield* AuthService
     
     // Parse JSON with error handling
-    const requestData = yield* 
+    const requestData = yield*
       Effect.tryPromise({
         try: () => c.req.json(),
-        catch: (error) => {
-          // Log parse error (non-blocking)
-          runInBackground(c, logAuthEvent(db, 'Registration failed: Invalid JSON', 'warn'))
-          
-          return new ValidationError('Invalid JSON in request body')
-        }
+        catch: (error) => new ValidationError('Invalid JSON in request body')
       })
     
     
     // Build and validate using dynamic schema
-    const validationSchema = yield* 
+    const validationSchema = yield*
       Effect.succeed(authValidationService.buildRegistrationSchema())
     
     
-    const validation = Schema.decodeUnknownEither(validationSchema as any)(requestData)
-    
-    if (validation._tag === 'Left') {
-      // Log validation error (non-blocking)
-      runInBackground(c, logAuthEvent(db, 'Registration validation failed', 'warn', {
-        errors: validation.left.message
-      }))
-      
-      return {
-        error: 'Validation failed',
-        details: validation.left.message,
-        statusCode: 400
-      }
-    }
-    
-    const validatedData = validation.right as any
+    // Použití Schema.decodeUnknown - automaticky failuje Effect při chybě
+    const validatedData = (yield*
+      Schema.decodeUnknown(validationSchema as any)(requestData).pipe(
+        Effect.catchTag('ParseError', (error) => {
+          // Log validation error (non-blocking)
+          runInBackground(c, logAuthEvent(db, 'Registration validation failed', 'warn', {
+            errors: error.message
+          }))
+          
+          return Effect.fail(new ValidationError('Validation failed', error.message))
+        })
+      )) as any
     
     // Extract fields with defaults for optional ones
     const email = validatedData.email
@@ -337,9 +328,9 @@ authRoutes.post('/register', (c) => {
   
   const db = c.env.DB
   return Effect.runPromise(
-    program.pipe(
+    (program as any).pipe(
       Effect.provide(makeAppLayer(db)), // ✅ Unified layer for DB-dependent services
-      Effect.provide(makeAuthServiceLayer()), // AuthService remains separate
+      Effect.provide(makeAuthServiceLayer()), // AuthService layer
       Effect.catchAll((error) => {
         // Log error (non-blocking)
         runInBackground(c, logAuthEvent(db, 'Registration error', 'error', error))
@@ -376,28 +367,25 @@ authRoutes.post('/login', (c) => {
     const authService = yield* AuthService
     
     // Parse and validate request body
-    const body = yield* 
+    const body = yield*
       Effect.tryPromise({
         try: () => c.req.json(),
-        catch: (error) => new DatabaseError({ message: 'Failed to parse JSON', cause: error })
+        catch: (error) => new ValidationError('Failed to parse JSON')
       })
     
     
-    const validation = Schema.decodeUnknownEither(loginSchema)(body)
-    if (validation._tag === 'Left') {
-      // Log validation error (non-blocking)
-      runInBackground(c, logAuthEvent(db, 'Login validation failed', 'warn', {
-        errors: validation.left.message
-      }))
-      
-      return {
-        error: 'Validation failed',
-        details: validation.left.message,
-        statusCode: 400
-      }
-    }
-    
-    const { email, password } = validation.right
+    // Použití Schema.decodeUnknown - automaticky failuje Effect při chybě
+    const { email, password } = yield*
+      Schema.decodeUnknown(loginSchema)(body).pipe(
+        Effect.catchTag('ParseError', (error) => {
+          // Log validation error (non-blocking)
+          runInBackground(c, logAuthEvent(db, 'Login validation failed', 'warn', {
+            errors: error.message
+          }))
+          
+          return Effect.fail(new ValidationError('Validation failed', error.message))
+        })
+      )
     const normalizedEmail = email.toLowerCase()
     
     // Find user with Effect-based caching
@@ -536,6 +524,17 @@ authRoutes.post('/login', (c) => {
         runInBackground(c, logAuthEvent(db, 'Login error', 'error', error))
         
         console.error('Login error:', error)
+        
+        // Return appropriate status code based on error type
+        if (typeof error === 'object' && error !== null && '_tag' in error) {
+          if (error._tag === 'ValidationError') {
+            return Effect.succeed({
+              error: (error as ValidationError).message,
+              statusCode: 400
+            })
+          }
+        }
+        
         return Effect.succeed({
           error: 'Login failed',
           statusCode: 500
@@ -733,16 +732,21 @@ authRoutes.post('/register/form', (c) => {
       Effect.succeed(authValidationService.buildRegistrationSchema())
     
     
-    const validation = Schema.decodeUnknownEither(validationSchema as any)(requestData)
-
-    if (validation._tag === 'Left') {
-      return {
-        type: 'error' as const,
-        message: validation.left.message
-      }
+    // Použití Schema.decodeUnknown - failuje Effect při chybě
+    const validatedData: any = yield*
+      Schema.decodeUnknown(validationSchema as any)(requestData).pipe(
+        Effect.catchTag('ParseError', (error) =>
+          Effect.succeed({
+            type: 'error' as const,
+            message: error.message
+          } as any)
+        )
+      )
+    
+    // Check if we got error response
+    if (typeof validatedData === 'object' && validatedData.type === 'error') {
+      return validatedData
     }
-
-    const validatedData = validation.right as any
 
     // Extract fields with defaults for optional ones
     const password = validatedData.password
@@ -811,9 +815,9 @@ authRoutes.post('/register/form', (c) => {
   
   const db = c.env.DB
   return Effect.runPromise(
-    program.pipe(
+    (program as any).pipe(
       Effect.provide(makeAppLayer(db)), // ✅ Unified layer for DB-dependent services
-      Effect.provide(makeAuthServiceLayer()), // AuthService remains separate
+      Effect.provide(makeAuthServiceLayer()), // AuthService layer
       Effect.catchAll((error) => {
         console.error('Registration error:', error)
         return Effect.succeed({
@@ -822,7 +826,7 @@ authRoutes.post('/register/form', (c) => {
         })
       })
     )
-  ).then(result => {
+  ).then((result: any) => {
     if (result.type === 'error') {
       return c.html(html`
         <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
@@ -865,15 +869,14 @@ authRoutes.post('/login/form', (c) => {
     // Normalize email to lowercase
     const normalizedEmail = email.toLowerCase()
 
-    // Validate the data
-    const validation = Schema.decodeUnknownEither(loginSchema)({ email: normalizedEmail, password })
-
-    if (validation._tag === 'Left') {
-      return {
-        type: 'error' as const,
-        message: validation.left.message
-      }
-    }
+    // Validate the data using Schema.decodeUnknown
+    const validationResult = yield*
+      Schema.decodeUnknown(loginSchema)({ email: normalizedEmail, password }).pipe(
+        Effect.catchTag('ParseError', (error) =>
+          Effect.fail({ type: 'error' as const, message: error.message })
+        ),
+        Effect.catchAll((error) => Effect.fail(error))
+      )
     
     // Find user
     const user = yield* 

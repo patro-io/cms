@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { Context } from 'hono'
-import * as HonoCookie from 'hono/cookie'
-import { requireAuth, requireRole, optionalAuth } from '../../../middleware/auth'
 import { Effect, Layer, Option } from 'effect'
+
+// Mock Config Provider FIRST (must be before auth-effect import)
+vi.mock('../../../config/config-provider', () => ({
+  makeAppConfigLayer: () => Layer.empty
+}))
 
 // Mock dependencies
 const mockAuthService = {
@@ -20,12 +22,12 @@ const mockLoggerService = {
   error: vi.fn().mockReturnValue(Effect.succeed(undefined))
 }
 
-// Mock makeAuthServiceLayer
+// Mock AuthServiceLive
 vi.mock('../../../services/auth-effect', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../../../services/auth-effect')>()
   return {
     ...mod,
-    makeAuthServiceLayer: () => Layer.succeed(mod.AuthService, {
+    AuthServiceLive: Layer.succeed(mod.AuthService, {
         generateToken: vi.fn(),
         verifyToken: (token: string) => mockAuthService.verifyToken(token),
         hashPassword: vi.fn(),
@@ -81,6 +83,11 @@ vi.mock('hono/cookie', () => ({
     getCookie: vi.fn(),
     setCookie: vi.fn()
 }))
+
+// NOW import middleware AFTER mocks
+import { Context } from 'hono'
+import * as HonoCookie from 'hono/cookie'
+import { requireAuth, requireRole, optionalAuth } from '../../../middleware/auth'
 
 
 describe('Auth Middleware', () => {

@@ -1,7 +1,7 @@
 import { Effect, Layer } from 'effect'
 import { Context } from 'hono'
 import { vi, type Mock } from 'vitest'
-import { AuthService, type JWTPayload } from '../../services/auth-effect'
+import { AuthService, type AuthServiceInterface, type JWTPayload } from '../../services/auth-effect'
 import { DatabaseService } from '../../services/database-effect'
 
 export const mockAuthMiddleware = (user?: JWTPayload) => {
@@ -38,17 +38,17 @@ export const mockDatabaseService: MockedDb = {
   prepare: prepareMock,
 }
 
-export const mockAuthService: AuthService = {
-    generateToken: (userId, email, role) => Effect.succeed(`mock-token-${userId}-${email}-${role}`),
-    verifyToken: (token) => Effect.succeed({
+export const mockAuthService: AuthServiceInterface = {
+    generateToken: (userId: string, email: string, role: string) => Effect.succeed(`mock-token-${userId}-${email}-${role}`),
+    verifyToken: (token: string) => Effect.succeed({
         userId: 'test-user',
         email: 'test@example.com',
         role: 'admin',
         exp: Date.now() / 1000 + 3600,
         iat: Date.now() / 1000
     }),
-    hashPassword: (password) => Effect.succeed(`hashed-${password}`),
-    verifyPassword: (password, hash) => Effect.succeed(hash === `hashed-${password}`),
+    hashPassword: (password: string) => Effect.succeed(`hashed-${password}`),
+    verifyPassword: (password: string, hash: string) => Effect.succeed(hash === `hashed-${password}`),
 }
 
 export function setupTestMocks() {

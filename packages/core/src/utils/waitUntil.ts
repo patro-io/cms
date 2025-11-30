@@ -66,15 +66,20 @@ export function runInBackground<A, E>(
     console.error('[runInBackground] Background task failed:', error)
   })
 
-  // Registrujeme Promise u Cloudflare Workers runtime
-  // executionCtx je dostupný v Hono context jako c.executionCtx
-  if (c.executionCtx && typeof c.executionCtx.waitUntil === 'function') {
-    c.executionCtx.waitUntil(promise)
-  } else {
-    // Fallback pro lokální development kde executionCtx nemusí být dostupný
-    // V produkci by executionCtx měl být vždy k dispozici
-    console.warn('[runInBackground] executionCtx.waitUntil not available, running without background guarantee')
+  // Try to get executionCtx - it may throw in test environments
+  try {
+    const execCtx = c.executionCtx
+    if (execCtx && typeof execCtx.waitUntil === 'function') {
+      execCtx.waitUntil(promise)
+      return
+    }
+  } catch (e) {
+    // executionCtx not available (test environment)
+    // Just let the promise run without waitUntil
   }
+  
+  // If we get here, executionCtx wasn't available
+  // In production this shouldn't happen, in tests it's expected
 }
 
 /**

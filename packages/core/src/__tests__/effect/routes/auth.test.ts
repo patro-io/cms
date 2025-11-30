@@ -23,6 +23,11 @@ const createMockEnv = () => ({
     get: vi.fn(),
     put: vi.fn(),
     delete: vi.fn()
+  },
+  // Mock ExecutionContext for Cloudflare Workers
+  executionCtx: {
+    waitUntil: vi.fn(),
+    passThroughOnException: vi.fn()
   }
 })
 
