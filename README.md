@@ -159,4 +159,4 @@ app.get('/api/content', (c) => {
 
 ## 📄 License
 
-FSL-1.1-MIT © [PatroCMS](https://github.com/patro-io)
+FSL-1.1-MIT © [Patro](https://github.com/patro-io)
