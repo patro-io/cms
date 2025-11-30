@@ -37,6 +37,10 @@
 			"preview_id": "645e4b7c59d24c6cbe94113d8839d836"
 		}
 	],
+	// Workers AI
+	"ai": {
+		"binding": "AI"
+	},
 	// Environment variables
 	"vars": {
 		"ENVIRONMENT": "development"
@@ -49,6 +53,10 @@
 	"env": {
 		"production": {
 			"name": "patrocms",
+			// Workers AI
+			"ai": {
+				"binding": "AI"
+			},
 			"vars": {
 				"ENVIRONMENT": "production"
 			},

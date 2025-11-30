@@ -694,15 +694,15 @@ adminContentRoutes.get("/:id/edit", (c) => {
       ])
     ;
 
-    // DEBUG: Log fields and content data
-    console.log('🔍 [EDIT DEBUG] Collection:', content.collection_id);
-    console.log('🔍 [EDIT DEBUG] Fields from getCollectionFields:', JSON.stringify(fields.map(f => ({
-      name: f.field_name,
-      type: f.field_type,
-      label: f.field_label
-    })), null, 2));
-    console.log('🔍 [EDIT DEBUG] Content data:', JSON.stringify(content.data, null, 2));
-    console.log('🔍 [EDIT DEBUG] Content language:', content.language);
+    // DEBUG: Log fields and content data (commented out for production)
+    // console.log('🔍 [EDIT DEBUG] Collection:', content.collection_id);
+    // console.log('🔍 [EDIT DEBUG] Fields from getCollectionFields:', JSON.stringify(fields.map(f => ({
+    //   name: f.field_name,
+    //   type: f.field_type,
+    //   label: f.field_label
+    // })), null, 2));
+    // console.log('🔍 [EDIT DEBUG] Content data:', JSON.stringify(content.data, null, 2));
+    // console.log('🔍 [EDIT DEBUG] Content language:', content.language);
 
     // Check plugins in parallel
     const [workflowEnabled, quillEnabled, mdxeditorEnabled] = yield*
@@ -2080,7 +2080,7 @@ adminContentRoutes.get("/:id/translations", (c) => {
 
 // Create a new translation for content - Pure Effect
 adminContentRoutes.post("/:id/translate", (c) => {
-  console.log('[AI Translator] Manual translation triggered for content:', c.req.param("id"));
+  // console.log('[AI Translator] Manual translation triggered for content:', c.req.param("id"));
   const id = c.req.param("id");
   const user = c.get("user");
   const db = c.env.DB;
@@ -2140,7 +2140,7 @@ adminContentRoutes.post("/:id/translate", (c) => {
 
     // If useAi is true, trigger the AI translation directly
     if (useAi) {
-       console.log('[AI Translator] Triggering AI processing for content:', id, 'target:', targetLanguage);
+       // console.log('[AI Translator] Triggering AI processing for content:', id, 'target:', targetLanguage);
        
        const pluginService = yield* PluginService;
        const aiPlugin = yield* pluginService.getPlugin('ai-translator').pipe(
@@ -2161,8 +2161,7 @@ adminContentRoutes.post("/:id/translate", (c) => {
          } else {
            // Get database service and AI binding
            const dbService = yield* DatabaseService;
-           // AI binding might not be in Bindings interface yet, cast to any
-           const ai = (c.env as any).AI;
+           const ai = c.env.AI;
            
            if (!ai) {
              console.warn('[AI Translator] AI binding not found in environment, falling back to Mock service inside plugin logic');
