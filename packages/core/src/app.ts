@@ -44,6 +44,7 @@ export interface Bindings {
   CACHE_KV: KVNamespace
   MEDIA_BUCKET: R2Bucket
   ASSETS: Fetcher
+  AI?: any  // Cloudflare Workers AI binding
   EMAIL_QUEUE?: Queue
   SENDGRID_API_KEY?: string
   DEFAULT_FROM_EMAIL?: string
