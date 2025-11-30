@@ -33,3 +33,6 @@ export {
 
 // Version Info
 export { getCoreVersion, PATROCMS_VERSION } from "./version";
+
+// Cloudflare Workers waitUntil Helper (Effect-based)
+export { runInBackground, runInBackgroundWithContext } from "./waitUntil";
