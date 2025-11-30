@@ -3,8 +3,9 @@
  * Handles JWT token generation/verification and password hashing
  */
 
-import { Context, Data, Effect, Layer } from 'effect'
+import { Config, Context, Data, Effect, Layer, Redacted } from 'effect'
 import { sign, verify } from 'hono/jwt'
+import { JwtConfig } from '../config/app-config.js'
 
 /**
  * JWT Payload type
@@ -53,7 +54,9 @@ export class PasswordMismatchError extends Data.TaggedError("PasswordMismatchErr
 /**
  * Auth Service Interface
  */
-export interface AuthService {
+// Interface je nyní implicitně definován Effect.Service třídou níže
+// Export type pro backwards compatibility
+export type AuthServiceInterface = {
   readonly generateToken: (
     userId: string,
     email: string,
@@ -63,7 +66,7 @@ export interface AuthService {
 
   readonly verifyToken: (
     token: string
-  ) => Effect.Effect<JWTPayload, AuthError | TokenExpiredError | TokenInvalidError>
+  ) => Effect.Effect<JWTPayload, TokenExpiredError | TokenInvalidError>
 
   readonly hashPassword: (
     password: string,
@@ -78,9 +81,9 @@ export interface AuthService {
 }
 
 /**
- * Auth Service Tag
+ * Auth Service Tag for dependency injection
  */
-export const AuthService = Context.GenericTag<AuthService>('@services/AuthService')
+export const AuthService = Context.GenericTag<AuthServiceInterface>('@services/AuthService')
 
 /**
  * Helper for hashing (Internal)
@@ -99,15 +102,22 @@ const hashHelper = (password: string, salt: string): Effect.Effect<string, AuthE
 
 /**
  * Auth Service Live Implementation
+ *
+ * Používá Effect.Config pro type-safe konfiguraci JWT
  */
-export const AuthServiceLive = (
-  jwtSecret: string = 'your-super-secret-jwt-key-change-in-production',
-  passwordSalt: string = 'salt-change-in-production'
-): Layer.Layer<AuthService> =>
-  Layer.succeed(
-    AuthService,
-    {
-      generateToken: (userId, email, role, expiryHours = 24) =>
+export const AuthServiceLive = Layer.effect(
+  AuthService,
+  Effect.gen(function* () {
+    // Získáme JWT config z Environment
+    const config = yield* JwtConfig
+    
+    // Rozbalíme Redacted hodnoty pro použití
+    const jwtSecret = Redacted.value(config.secret)
+    const passwordSalt = Redacted.value(config.passwordSalt)
+    const defaultExpiryHours = config.expiresInHours
+
+    return {
+      generateToken: (userId, email, role, expiryHours = defaultExpiryHours) =>
         Effect.gen(function* () {
           const payload = {
             userId,
@@ -141,7 +151,7 @@ export const AuthServiceLive = (
           return typedPayload
         }),
 
-      hashPassword: (password, salt = passwordSalt) => 
+      hashPassword: (password, salt = passwordSalt) =>
         hashHelper(password, salt),
 
       verifyPassword: (password, hash, salt = passwordSalt) =>
@@ -155,10 +165,12 @@ export const AuthServiceLive = (
           return true
         })
     }
-  )
+  })
+)
 
 /**
- * Alias for backward compatibility if needed, 
- * but AuthServiceLive is sufficient.
+ * Convenience function pro vytvoření AuthService layer s výchozími hodnotami
+ *
+ * @deprecated Používejte AuthServiceLive přímo s ConfigProvider
  */
-export const makeAuthServiceLayer = AuthServiceLive
+export const makeAuthServiceLayer = () => AuthServiceLive

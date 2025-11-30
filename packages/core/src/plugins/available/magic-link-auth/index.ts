@@ -11,8 +11,9 @@ import type { Plugin, PluginContext } from '../../types'
 import type { D1Database } from '@cloudflare/workers-types'
 import {
   AuthService,
-  makeAuthServiceLayer
+  AuthServiceLive
 } from '../../../services/auth-effect'
+import { makeAppConfigLayer } from '../../../config/config-provider.js'
 import {
   DatabaseService,
   makeDatabaseLayer,
@@ -326,12 +327,13 @@ export function createMagicLinkAuthPlugin(): Plugin {
     })
 
     const db = (c.env as Record<string, unknown>).DB as D1Database
-    const jwtSecret = (c.env as Record<string, unknown>).JWT_SECRET as string
-    const passwordSalt = (c.env as Record<string, unknown>).PASSWORD_SALT as string
+    const configLayer = makeAppConfigLayer(c.env as any)
+    const authLayer = AuthServiceLive
     
     return Effect.runPromise(
       program.pipe(
-        Effect.provide(makeAuthServiceLayer(jwtSecret, passwordSalt)),
+        Effect.provide(authLayer),
+        Effect.provide(configLayer),
         Effect.provide(makeDatabaseLayer(db)),
         Effect.catchAll((error) => {
           console.error('Magic link verification error:', error)

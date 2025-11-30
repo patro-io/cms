@@ -4,31 +4,33 @@ import { Context, Next } from 'hono'
 import { getCookie, setCookie } from 'hono/cookie'
 import { CACHE_CONFIGS, CacheService, makeCacheServiceLayer } from '../services/cache'
 import { LoggerService, makeLoggerServiceLayer } from '../services/logger'
-import { AuthService, makeAuthServiceLayer, type JWTPayload } from '../services/auth-effect'
-
-// JWT secret - in production this should come from environment variables
-const JWT_SECRET = 'your-super-secret-jwt-key-change-in-production'
-const PASSWORD_SALT = 'salt-change-in-production'
+import { AuthService, AuthServiceLive, type JWTPayload } from '../services/auth-effect'
+import { makeAppConfigLayer } from '../config/config-provider.js'
 
 /**
  * AuthManager - Compatibility wrapper that uses AuthService internally
  * This maintains backward compatibility while using the new Effect-based AuthService
  */
 export class AuthManager {
-  static async generateToken(userId: string, email: string, role: string): Promise<string> {
-    const authLayer = makeAuthServiceLayer(JWT_SECRET, PASSWORD_SALT)
+  static async generateToken(userId: string, email: string, role: string, env: any): Promise<string> {
+    const configLayer = makeAppConfigLayer(env)
+    const authLayer = AuthServiceLive
     const program = Effect.gen(function* (_) {
       const auth = yield* AuthService
       return yield* auth.generateToken(userId, email, role)
     })
     
     return await Effect.runPromise(
-      program.pipe(Effect.provide(authLayer))
+      program.pipe(
+        Effect.provide(authLayer),
+        Effect.provide(configLayer)
+      )
     )
   }
 
-  static async verifyToken(token: string): Promise<JWTPayload | null> {
-    const authLayer = makeAuthServiceLayer(JWT_SECRET, PASSWORD_SALT)
+  static async verifyToken(token: string, env: any): Promise<JWTPayload | null> {
+    const configLayer = makeAppConfigLayer(env)
+    const authLayer = AuthServiceLive
     const program = Effect.gen(function* (_) {
       const auth = yield* AuthService
       return yield* auth.verifyToken(token)
@@ -37,6 +39,7 @@ export class AuthManager {
     const result = await Effect.runPromise(
       program.pipe(
         Effect.provide(authLayer),
+        Effect.provide(configLayer),
         Effect.tapError((e) => Effect.logError("Chyba pohlcena v middleware/route", e)),
         Effect.catchAll(() => Effect.succeed(null))
       )
@@ -45,20 +48,25 @@ export class AuthManager {
     return result
   }
 
-  static async hashPassword(password: string): Promise<string> {
-    const authLayer = makeAuthServiceLayer(JWT_SECRET, PASSWORD_SALT)
+  static async hashPassword(password: string, env: any): Promise<string> {
+    const configLayer = makeAppConfigLayer(env)
+    const authLayer = AuthServiceLive
     const program = Effect.gen(function* (_) {
       const auth = yield* AuthService
       return yield* auth.hashPassword(password)
     })
     
     return await Effect.runPromise(
-      program.pipe(Effect.provide(authLayer))
+      program.pipe(
+        Effect.provide(authLayer),
+        Effect.provide(configLayer)
+      )
     )
   }
 
-  static async verifyPassword(password: string, hash: string): Promise<boolean> {
-    const authLayer = makeAuthServiceLayer(JWT_SECRET, PASSWORD_SALT)
+  static async verifyPassword(password: string, hash: string, env: any): Promise<boolean> {
+    const configLayer = makeAppConfigLayer(env)
+    const authLayer = AuthServiceLive
     const program = Effect.gen(function* (_) {
       const auth = yield* AuthService
       return yield* auth.verifyPassword(password, hash)
@@ -67,6 +75,7 @@ export class AuthManager {
     const result = await Effect.runPromise(
       program.pipe(
         Effect.provide(authLayer),
+        Effect.provide(configLayer),
         Effect.tapError((e) => Effect.logError("Chyba pohlcena v middleware/route", e)),
         Effect.catchAll(() => Effect.succeed(false))
       )
@@ -196,7 +205,8 @@ export const requireAuth = () => {
     })
 
     // Construct layers
-    const authLayer = makeAuthServiceLayer(JWT_SECRET, PASSWORD_SALT)
+    const configLayer = makeAppConfigLayer(c.env)
+    const authLayer = AuthServiceLive
     const loggerLayer = c.env?.DB ? makeLoggerServiceLayer(c.env.DB as D1Database) : Layer.die("No DB")
     const cacheLayer = makeCacheServiceLayer(CACHE_CONFIGS.user)
 
@@ -204,6 +214,7 @@ export const requireAuth = () => {
     return Effect.runPromise(
       program.pipe(
         Effect.provide(authLayer),
+        Effect.provide(configLayer),
         Effect.provide(loggerLayer),
         Effect.provide(cacheLayer),
         Effect.catchAll((error) => {
@@ -279,11 +290,13 @@ export const optionalAuth = () => {
       })
     })
 
-    const authLayer = makeAuthServiceLayer(JWT_SECRET, PASSWORD_SALT)
+    const configLayer = makeAppConfigLayer(c.env)
+    const authLayer = AuthServiceLive
 
     return Effect.runPromise(
         program.pipe(
             Effect.provide(authLayer),
+            Effect.provide(configLayer),
             Effect.catchAll((error) => {
                 console.error('Optional auth error:', error)
                 return Effect.tryPromise({

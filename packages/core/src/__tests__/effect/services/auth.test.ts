@@ -1,20 +1,20 @@
 /**
  * AuthService Tests - Effect TS Implementation
- * 
+ *
  * Testuje JWT token generování/verifikaci a password hashing
  */
 
-import { describe, it, expect, beforeEach } from 'vitest'
-import { Effect } from 'effect'
+import { describe, it, expect } from 'vitest'
+import { Effect, Layer } from 'effect'
 import {
   AuthService,
   AuthServiceLive,
   JWTPayload,
-  AuthError,
   TokenExpiredError,
   TokenInvalidError,
   PasswordMismatchError
 } from '../../../services/auth-effect'
+import { makeMockConfigLayer } from '../../../config/config-provider.js'
 
 /**
  * Test credentials
@@ -23,10 +23,16 @@ const TEST_JWT_SECRET = 'test-secret-key-for-jwt'
 const TEST_PASSWORD_SALT = 'test-salt-for-passwords'
 
 /**
- * Helper pro vytvoření test layer
+ * Helper pro vytvoření test layer s mock config
  */
-const makeTestAuthServiceLayer = () => 
-  AuthServiceLive(TEST_JWT_SECRET, TEST_PASSWORD_SALT)
+const makeTestAuthServiceLayer = () => {
+  const configLayer = makeMockConfigLayer({
+    JWT_SECRET: TEST_JWT_SECRET,
+    PASSWORD_SALT: TEST_PASSWORD_SALT,
+    JWT_EXPIRES_IN_HOURS: '24'
+  })
+  return Layer.provide(AuthServiceLive, configLayer)
+}
 
 describe('AuthService - Effect Implementation', () => {
   describe('generateToken', () => {
@@ -220,7 +226,11 @@ describe('AuthService - Effect Implementation', () => {
         return yield* service.verifyToken(token)
       })
 
-      const differentLayer = AuthServiceLive('different-secret-key', TEST_PASSWORD_SALT)
+      const differentConfigLayer = makeMockConfigLayer({
+        JWT_SECRET: 'different-secret-key',
+        PASSWORD_SALT: TEST_PASSWORD_SALT
+      })
+      const differentLayer = Layer.provide(AuthServiceLive, differentConfigLayer)
 
       const exit = await Effect.runPromiseExit(
         verifyProgram.pipe(Effect.provide(differentLayer))
