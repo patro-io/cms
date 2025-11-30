@@ -18,6 +18,7 @@ import {
 } from '../services/database-effect'
 import { CACHE_CONFIGS, CacheService, makeCacheServiceLayer } from '../services/cache'
 import { makeAppLayer } from '../services'
+import { runInBackground } from '../utils/waitUntil'
 
 const apiContentCrudRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>()
 
@@ -240,7 +241,7 @@ apiContentCrudRoutes.post('/', requireAuth(), (c) => {
       yield* cache.invalidate(`content:list:${collectionId}:*`)
       yield* cache.invalidate('content-filtered:*')
     })
-    Effect.runPromise(Effect.provide(invalidateProgram, cacheLayer)).catch(() => {})
+    runInBackground(c, Effect.provide(invalidateProgram, cacheLayer))
     
     return {
       data: {
@@ -342,7 +343,7 @@ apiContentCrudRoutes.put('/:id', requireAuth(), (c) => {
       yield* cache.invalidate(`content:list:${content.collection_id}:*`)
       yield* cache.invalidate('content-filtered:*')
     })
-    Effect.runPromise(Effect.provide(invalidateProgram, cacheLayer)).catch(() => {})
+    runInBackground(c, Effect.provide(invalidateProgram, cacheLayer))
     
     return {
       data: {
@@ -423,7 +424,7 @@ apiContentCrudRoutes.delete('/:id', requireAuth(), (c) => {
       yield* cache.invalidate(`content:list:${collectionId}:*`)
       yield* cache.invalidate('content-filtered:*')
     })
-    Effect.runPromise(Effect.provide(invalidateProgram, cacheLayer)).catch(() => {})
+    runInBackground(c, Effect.provide(invalidateProgram, cacheLayer))
     
     return { success: true }
   })

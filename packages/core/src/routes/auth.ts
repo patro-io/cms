@@ -6,6 +6,7 @@ import { html } from 'hono/html'
 import type { Bindings, Variables } from '../app'
 import { AuthManager, requireAuth, getTranslate } from '../middleware'
 import { authValidationService } from '../services/auth-validation'
+import { runInBackground } from '../utils/waitUntil'
 import {
   DatabaseService,
   makeDatabaseLayer,
@@ -222,9 +223,7 @@ authRoutes.post('/register', (c) => {
         try: () => c.req.json(),
         catch: (error) => {
           // Log parse error (non-blocking)
-          Effect.runPromise(
-            logAuthEvent(db, 'Registration failed: Invalid JSON', 'warn')
-          ).catch(() => {})
+          runInBackground(c, logAuthEvent(db, 'Registration failed: Invalid JSON', 'warn'))
           
           return new ValidationError('Invalid JSON in request body')
         }
@@ -240,11 +239,9 @@ authRoutes.post('/register', (c) => {
     
     if (validation._tag === 'Left') {
       // Log validation error (non-blocking)
-      Effect.runPromise(
-        logAuthEvent(db, 'Registration validation failed', 'warn', {
-          errors: validation.left.message
-        })
-      ).catch(() => {})
+      runInBackground(c, logAuthEvent(db, 'Registration validation failed', 'warn', {
+        errors: validation.left.message
+      }))
       
       return {
         error: 'Validation failed',
@@ -275,12 +272,10 @@ authRoutes.post('/register', (c) => {
     
     if (existingUser) {
       // Log duplicate user attempt (non-blocking)
-      Effect.runPromise(
-        logAuthEvent(db, 'Registration failed: User exists', 'warn', {
-          email: normalizedEmail,
-          username
-        })
-      ).catch(() => {})
+      runInBackground(c, logAuthEvent(db, 'Registration failed: User exists', 'warn', {
+        email: normalizedEmail,
+        username
+      }))
       
       return {
         error: 'User with this email or username already exists',
@@ -315,18 +310,16 @@ authRoutes.post('/register', (c) => {
     })
     
     // Log successful registration (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'User registered successfully', 'info', {
-        userId,
-        email: normalizedEmail,
-        username,
-        role: 'viewer'
-      }, {
-        ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
-        userAgent: c.req.header('User-Agent'),
-        url: c.req.url
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'User registered successfully', 'info', {
+      userId,
+      email: normalizedEmail,
+      username,
+      role: 'viewer'
+    }, {
+      ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
+      userAgent: c.req.header('User-Agent'),
+      url: c.req.url
+    }))
     
     return {
       user: {
@@ -349,9 +342,7 @@ authRoutes.post('/register', (c) => {
       Effect.provide(makeAuthServiceLayer()), // AuthService remains separate
       Effect.catchAll((error) => {
         // Log error (non-blocking)
-        Effect.runPromise(
-          logAuthEvent(db, 'Registration error', 'error', error)
-        ).catch(() => {})
+        runInBackground(c, logAuthEvent(db, 'Registration error', 'error', error))
         
         console.error('Registration error:', error)
         
@@ -395,11 +386,9 @@ authRoutes.post('/login', (c) => {
     const validation = Schema.decodeUnknownEither(loginSchema)(body)
     if (validation._tag === 'Left') {
       // Log validation error (non-blocking)
-      Effect.runPromise(
-        logAuthEvent(db, 'Login validation failed', 'warn', {
-          errors: validation.left.message
-        })
-      ).catch(() => {})
+      runInBackground(c, logAuthEvent(db, 'Login validation failed', 'warn', {
+        errors: validation.left.message
+      }))
       
       return {
         error: 'Validation failed',
@@ -434,33 +423,27 @@ authRoutes.post('/login', (c) => {
       
       if (user) {
         // Cache the user (non-blocking)
-        Effect.runPromise(
-          setCachedUser(db, cacheKey, user).pipe(
-            Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
-            Effect.catchAll(() => Effect.succeed(undefined))
-          )
-        ).catch(() => {})
+        runInBackground(c, setCachedUser(db, cacheKey, user).pipe(
+          Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
+          Effect.catchAll(() => Effect.succeed(undefined))
+        ))
         
-        Effect.runPromise(
-          setCachedUser(db, `user:${user.id}`, user).pipe(
-            Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
-            Effect.catchAll(() => Effect.succeed(undefined))
-          )
-        ).catch(() => {})
+        runInBackground(c, setCachedUser(db, `user:${user.id}`, user).pipe(
+          Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
+          Effect.catchAll(() => Effect.succeed(undefined))
+        ))
       }
     }
     
     if (!user) {
       // Log failed login (non-blocking)
-      Effect.runPromise(
-        logAuthEvent(db, 'Login failed: User not found', 'warn', {
-          email: normalizedEmail
-        }, {
-          ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
-          userAgent: c.req.header('User-Agent'),
-          url: c.req.url
-        })
-      ).catch(() => {})
+      runInBackground(c, logAuthEvent(db, 'Login failed: User not found', 'warn', {
+        email: normalizedEmail
+      }, {
+        ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
+        userAgent: c.req.header('User-Agent'),
+        url: c.req.url
+      }))
       
       return {
         error: 'Invalid email or password',
@@ -478,16 +461,14 @@ authRoutes.post('/login', (c) => {
     
     if (!isValidPassword) {
       // Log failed login (non-blocking)
-      Effect.runPromise(
-        logAuthEvent(db, 'Login failed: Invalid password', 'warn', {
-          userId: user.id,
-          email: normalizedEmail
-        }, {
-          ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
-          userAgent: c.req.header('User-Agent'),
-          url: c.req.url
-        })
-      ).catch(() => {})
+      runInBackground(c, logAuthEvent(db, 'Login failed: Invalid password', 'warn', {
+        userId: user.id,
+        email: normalizedEmail
+      }, {
+        ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
+        userAgent: c.req.header('User-Agent'),
+        url: c.req.url
+      }))
       
       return {
         error: 'Invalid email or password',
@@ -515,25 +496,21 @@ authRoutes.post('/login', (c) => {
     
     
     // Invalidate user cache (non-blocking)
-    Effect.runPromise(
-      invalidateUserCache(db, user.id, normalizedEmail).pipe(
-        Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
-        Effect.catchAll(() => Effect.succeed(undefined))
-      )
-    ).catch(() => {})
+    runInBackground(c, invalidateUserCache(db, user.id, normalizedEmail).pipe(
+      Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
+      Effect.catchAll(() => Effect.succeed(undefined))
+    ))
     
     // Log successful login (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'User logged in successfully', 'info', {
-        userId: user.id,
-        email: user.email,
-        role: user.role
-      }, {
-        ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
-        userAgent: c.req.header('User-Agent'),
-        url: c.req.url
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'User logged in successfully', 'info', {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    }, {
+      ipAddress: c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For'),
+      userAgent: c.req.header('User-Agent'),
+      url: c.req.url
+    }))
     
     return {
       user: {
@@ -556,9 +533,7 @@ authRoutes.post('/login', (c) => {
       Effect.provide(makeAuthServiceLayer()), // AuthService remains separate
       Effect.catchAll((error) => {
         // Log error (non-blocking)
-        Effect.runPromise(
-          logAuthEvent(db, 'Login error', 'error', error)
-        ).catch(() => {})
+        runInBackground(c, logAuthEvent(db, 'Login error', 'error', error))
         
         console.error('Login error:', error)
         return Effect.succeed({
@@ -587,11 +562,9 @@ authRoutes.post('/logout', (c) => {
   // Log logout (non-blocking)
   if (c.env?.DB) {
     const user = c.get('user')
-    Effect.runPromise(
-      logAuthEvent(c.env.DB, 'User logged out', 'info', {
-        userId: user?.userId
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(c.env.DB, 'User logged out', 'info', {
+      userId: user?.userId
+    }))
   }
   
   return c.json({ message: 'Logged out successfully' })
@@ -609,11 +582,9 @@ authRoutes.get('/logout', (c) => {
   // Log logout (non-blocking)
   if (c.env?.DB) {
     const user = c.get('user')
-    Effect.runPromise(
-      logAuthEvent(c.env.DB, 'User logged out', 'info', {
-        userId: user?.userId
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(c.env.DB, 'User logged out', 'info', {
+      userId: user?.userId
+    }))
   }
   
   return c.redirect('/auth/login?message=You have been logged out successfully')
@@ -700,11 +671,9 @@ authRoutes.post('/refresh', requireAuth(), (c) => {
     })
     
     // Log token refresh (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'Token refreshed', 'info', {
-        userId: user.userId
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'Token refreshed', 'info', {
+      userId: user.userId
+    }))
     
     return {
       token,
@@ -826,14 +795,12 @@ authRoutes.post('/register/form', (c) => {
     })
     
     // Log successful registration (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'User registered via form', 'info', {
-        userId,
-        email: normalizedEmail,
-        username,
-        role: 'admin'
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'User registered via form', 'info', {
+      userId,
+      email: normalizedEmail,
+      username,
+      role: 'admin'
+    }))
     
     return {
       type: 'success' as const,
@@ -961,13 +928,11 @@ authRoutes.post('/login/form', (c) => {
     
     
     // Log successful login (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'User logged in via form', 'info', {
-        userId: user.id,
-        email: user.email,
-        role: user.role
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'User logged in via form', 'info', {
+      userId: user.id,
+      email: user.email,
+      role: user.role
+    }))
     
     return {
       type: 'success' as const
@@ -1095,12 +1060,10 @@ authRoutes.post('/seed-admin', (c) => {
     
     
     // Log admin user creation (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'Admin user seeded', 'info', {
-        userId,
-        email: adminEmail
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'Admin user seeded', 'info', {
+      userId,
+      email: adminEmail
+    }))
     
     return {
       message: 'Admin user created successfully',
@@ -1425,14 +1388,12 @@ authRoutes.post('/accept-invitation', (c) => {
     })
 
     // Log invitation acceptance (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'Invitation accepted', 'info', {
-        userId: invitedUser.id,
-        email: invitedUser.email,
-        username,
-        role: invitedUser.role
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'Invitation accepted', 'info', {
+      userId: invitedUser.id,
+      email: invitedUser.email,
+      username,
+      role: invitedUser.role
+    }))
 
     return { redirect: '/admin/dashboard?welcome=true' }
   })
@@ -1528,12 +1489,10 @@ authRoutes.post('/request-password-reset', (c) => {
     
 
     // Log password reset request (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'Password reset requested', 'info', {
-        userId: user.id,
-        email: user.email
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'Password reset requested', 'info', {
+      userId: user.id,
+      email: user.email
+    }))
 
     // In a real implementation, you would send an email here
     const resetLink = `${c.req.header('origin') || 'http://localhost:8787'}/auth/reset-password?token=${resetToken}`
@@ -1824,12 +1783,10 @@ authRoutes.post('/reset-password', (c) => {
     
 
     // Log password reset (non-blocking)
-    Effect.runPromise(
-      logAuthEvent(db, 'Password reset completed', 'info', {
-        userId: user.id,
-        email: user.email
-      })
-    ).catch(() => {})
+    runInBackground(c, logAuthEvent(db, 'Password reset completed', 'info', {
+      userId: user.id,
+      email: user.email
+    }))
 
     return { redirect: '/auth/login?message=Password reset successfully. Please log in with your new password.' }
   })

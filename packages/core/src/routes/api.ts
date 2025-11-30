@@ -12,6 +12,7 @@ import apiContentCrudRoutes from './api-content-crud'
 import { CollectionService } from '../services/collection-effect'
 import { DatabaseService } from '../services/database-effect'
 import { makeAppLayer } from '../services'
+import { runInBackground } from '../utils/waitUntil'
 
 // Extend Variables with API-specific fields
 interface Variables extends AppVariables {
@@ -232,12 +233,10 @@ apiRoutes.get('/collections', (c) => {
     }
 
     // Cache the response using Effect (non-blocking)
-    Effect.runPromise(
-      setCachedData(db, cacheKey, responseData, cacheEnabled).pipe(
-        Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
-        Effect.catchAll(() => Effect.succeed(undefined))
-      )
-    ).catch(() => {})
+    runInBackground(c, setCachedData(db, cacheKey, responseData, cacheEnabled).pipe(
+      Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
+      Effect.catchAll(() => Effect.succeed(undefined))
+    ))
 
     return {
       type: 'fresh' as const,
@@ -257,12 +256,10 @@ apiRoutes.get('/collections', (c) => {
           logger.error('api', 'Failed to fetch collections', error)
         )
         
-        Effect.runPromise(
-          Effect.provide(logProgram, loggerLayer).pipe(
-            Effect.tapError(Effect.logDebug),
-            Effect.catchAll(() => Effect.succeed(undefined))
-          )
-        ).catch(() => {})
+        runInBackground(c, Effect.provide(logProgram, loggerLayer).pipe(
+          Effect.tapError(Effect.logDebug),
+          Effect.catchAll(() => Effect.succeed(undefined))
+        ))
 
         console.error('Error fetching collections:', error)
         return Effect.succeed({
@@ -424,12 +421,10 @@ apiRoutes.get('/content', (c) => {
     }
 
     // Cache the response using Effect (non-blocking)
-    Effect.runPromise(
-      setCachedData(db, cacheKey, responseData, cacheEnabled).pipe(
-        Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
-        Effect.catchAll(() => Effect.succeed(undefined))
-      )
-    ).catch(() => {})
+    runInBackground(c, setCachedData(db, cacheKey, responseData, cacheEnabled).pipe(
+      Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
+      Effect.catchAll(() => Effect.succeed(undefined))
+    ))
 
     return {
       type: 'fresh' as const,
@@ -449,12 +444,10 @@ apiRoutes.get('/content', (c) => {
           logger.error('api', 'Failed to fetch content', error)
         )
         
-        Effect.runPromise(
-          Effect.provide(logProgram, loggerLayer).pipe(
-            Effect.tapError(Effect.logDebug),
-            Effect.catchAll(() => Effect.succeed(undefined))
-          )
-        ).catch(() => {})
+        runInBackground(c, Effect.provide(logProgram, loggerLayer).pipe(
+          Effect.tapError(Effect.logDebug),
+          Effect.catchAll(() => Effect.succeed(undefined))
+        ))
 
         console.error('Error fetching content:', error)
         return Effect.succeed({
@@ -493,12 +486,10 @@ apiRoutes.get('/content', (c) => {
         })
       )
       
-      Effect.runPromise(
-        Effect.provide(logProgram, loggerLayer).pipe(
-          Effect.tapError(Effect.logDebug),
-          Effect.catchAll(() => Effect.succeed(undefined))
-        )
-      ).catch(() => {})
+      runInBackground(c, Effect.provide(logProgram, loggerLayer).pipe(
+        Effect.tapError(Effect.logDebug),
+        Effect.catchAll(() => Effect.succeed(undefined))
+      ))
       
       return c.json({
         error: 'Invalid filter parameters',
@@ -669,12 +660,10 @@ apiRoutes.get('/collections/:collection/content', (c) => {
     }
 
     // Cache the response using Effect (non-blocking)
-    Effect.runPromise(
-      setCachedData(db, cacheKey, responseData, cacheEnabled).pipe(
-        Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
-        Effect.catchAll(() => Effect.succeed(undefined))
-      )
-    ).catch(() => {})
+    runInBackground(c, setCachedData(db, cacheKey, responseData, cacheEnabled).pipe(
+      Effect.tapError((e) => Effect.logWarning("Selhání service zápisu (cache)", e)),
+      Effect.catchAll(() => Effect.succeed(undefined))
+    ))
 
     return {
       type: 'fresh' as const,
@@ -695,12 +684,10 @@ apiRoutes.get('/collections/:collection/content', (c) => {
           logger.error('api', 'Failed to fetch collection content', error)
         )
         
-        Effect.runPromise(
-          Effect.provide(logProgram, loggerLayer).pipe(
-            Effect.tapError(Effect.logDebug),
-            Effect.catchAll(() => Effect.succeed(undefined))
-          )
-        ).catch(() => {})
+        runInBackground(c, Effect.provide(logProgram, loggerLayer).pipe(
+          Effect.tapError(Effect.logDebug),
+          Effect.catchAll(() => Effect.succeed(undefined))
+        ))
 
         console.error('Error fetching content:', error)
         return Effect.succeed({
@@ -727,12 +714,10 @@ apiRoutes.get('/collections/:collection/content', (c) => {
         })
       )
       
-      Effect.runPromise(
-        Effect.provide(logProgram, loggerLayer).pipe(
-          Effect.tapError(Effect.logDebug),
-          Effect.catchAll(() => Effect.succeed(undefined))
-        )
-      ).catch(() => {})
+      runInBackground(c, Effect.provide(logProgram, loggerLayer).pipe(
+        Effect.tapError(Effect.logDebug),
+        Effect.catchAll(() => Effect.succeed(undefined))
+      ))
       
       return c.json({ error: 'Collection not found' }, 404)
     }
@@ -748,12 +733,10 @@ apiRoutes.get('/collections/:collection/content', (c) => {
         })
       )
       
-      Effect.runPromise(
-        Effect.provide(logProgram, loggerLayer).pipe(
-          Effect.tapError(Effect.logDebug),
-          Effect.catchAll(() => Effect.succeed(undefined))
-        )
-      ).catch(() => {})
+      runInBackground(c, Effect.provide(logProgram, loggerLayer).pipe(
+        Effect.tapError(Effect.logDebug),
+        Effect.catchAll(() => Effect.succeed(undefined))
+      ))
       
       return c.json({
         error: 'Invalid filter parameters',

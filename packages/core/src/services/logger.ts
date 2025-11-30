@@ -79,8 +79,31 @@ export class ConfigError extends Data.TaggedError("ConfigError")<{
 
 interface LoggerState {
   enabled: boolean
-  configCache: Map<string, LogConfig>
-  lastConfigRefresh: number
+}
+
+/**
+ * Globální cache pro log konfigurace
+ * Persists across requests in a single Cloudflare Worker instance
+ */
+interface GlobalConfigCache {
+  cache: Map<string, LogConfig>
+  lastRefresh: number
+}
+
+// Globální singleton pro config cache (přežívá mezi requesty)
+let globalConfigCache: GlobalConfigCache | null = null
+
+/**
+ * Získá nebo vytvoří globální config cache
+ */
+function getGlobalConfigCache(): GlobalConfigCache {
+  if (globalConfigCache === null) {
+    globalConfigCache = {
+      cache: new Map(),
+      lastRefresh: 0
+    }
+  }
+  return globalConfigCache
 }
 
 export interface LoggerServiceOps {
@@ -124,24 +147,24 @@ function shouldLog(level: LogLevel, configLevel: string): boolean {
 
 /**
  * Get log configuration from cache or database
+ * Používá globální cache pro persistenci mezi requesty
  */
 const getConfigEffect = (
   db: ReturnType<typeof drizzle>,
-  stateRef: Ref.Ref<LoggerState>,
   category: LogCategory
 ): Effect.Effect<Option.Option<LogConfig>, ConfigError> =>
   Effect.gen(function* (_) {
     try {
-      const state = yield* Ref.get(stateRef)
+      const globalCache = getGlobalConfigCache()
       const now = Date.now()
 
-      // Check cache first
-      if (state.configCache.has(category) && (now - state.lastConfigRefresh) < CONFIG_REFRESH_INTERVAL) {
-        return Option.some(state.configCache.get(category)!)
+      // Check globální cache first
+      if (globalCache.cache.has(category) && (now - globalCache.lastRefresh) < CONFIG_REFRESH_INTERVAL) {
+        return Option.some(globalCache.cache.get(category)!)
       }
 
       // Refresh from database
-      const configs = yield* 
+      const configs = yield*
         Effect.tryPromise({
           try: () => db.select().from(logConfig).where(eq(logConfig.category, category)),
           catch: (error) => new ConfigError({
@@ -154,11 +177,9 @@ const getConfigEffect = (
       const config = configs[0]
       
       if (config) {
-        yield* Ref.update(stateRef, state => ({
-          ...state,
-          configCache: new Map(state.configCache).set(category, config),
-          lastConfigRefresh: now
-        }))
+        // Update globální cache
+        globalCache.cache.set(category, config)
+        globalCache.lastRefresh = now
         return Option.some(config)
       }
 
@@ -191,9 +212,9 @@ const logEffect = (
     }
 
     // Get config and check if logging is enabled
-    const configOption = yield* 
+    const configOption = yield*
       Effect.catchAll(
-        getConfigEffect(db, stateRef, category),
+        getConfigEffect(db, category),
         () => Effect.succeed(Option.none())
       )
     
@@ -334,9 +355,7 @@ export const makeLoggerServiceLayer = (
     Effect.gen(function* (_) {
       const db = drizzle(database)
       const stateRef = yield* Ref.make<LoggerState>({
-        enabled: true,
-        configCache: new Map(),
-        lastConfigRefresh: 0
+        enabled: true
       })
 
       return {
@@ -515,11 +534,10 @@ export const makeLoggerServiceLayer = (
               })
             
 
-            // Clear cache
-            yield* Ref.update(stateRef, state => ({
-              ...state,
-              configCache: new Map([...state.configCache].filter(([k]) => k !== category))
-            }))
+            // Clear globální cache pro danou kategorii
+            const globalCache = getGlobalConfigCache()
+            globalCache.cache.delete(category)
+            globalCache.lastRefresh = 0
           }),
 
         getAllConfigs: () =>
