@@ -6,16 +6,46 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  // Definice databáze, aby ji Deploy Button vytvořil
+  // 1. D1 Databáze
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "patro-cms-db",
-      "database_id": "xxx"
+      "database_id": "xxx",
+      "migrations_dir": "packages/core/migrations"
     }
   ],
-  // Pokud používáš Workers AI, přidej i toto
+  // 2. R2 Storage (Media)
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "patro-cms-media"
+    }
+  ],
+  // 3. KV Cache
+  "kv_namespaces": [
+    {
+      "binding": "CACHE_KV",
+      "id": "xxx"
+    }
+  ],
+  // 4. Workers AI
   "ai": {
     "binding": "AI"
-  }
+  },
+  // Proměnné prostředí
+  "vars": {
+    "ENVIRONMENT": "production"
+  },
+  // Pravidla pro build
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": [
+        "**/*.ts",
+        "**/*.js"
+      ],
+      "fallthrough": true
+    }
+  ]
 }
