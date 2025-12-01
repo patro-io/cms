@@ -118,6 +118,30 @@ export default defineConfig({
       }
     }
 
+    // Opravit relativní cesty k chunkům v ESM souborech
+    const esmFiles = fs.readdirSync(esmDir)
+    for (const file of esmFiles) {
+      if (file.endsWith('.js') && !file.startsWith('chunk-')) {
+        const filePath = path.join(esmDir, file)
+        let content = fs.readFileSync(filePath, 'utf-8')
+        // Změnit ./chunks/ na ../chunks/ protože soubory jsou nyní v dist/esm/
+        content = content.replace(/(['"])\.\/chunks\//g, '$1../chunks/')
+        fs.writeFileSync(filePath, content, 'utf-8')
+      }
+    }
+
+    // Opravit relativní cesty k chunkům v CJS souborech
+    const cjsFiles = fs.readdirSync(cjsDir)
+    for (const file of cjsFiles) {
+      if (file.endsWith('.cjs') && !file.startsWith('chunk-')) {
+        const filePath = path.join(cjsDir, file)
+        let content = fs.readFileSync(filePath, 'utf-8')
+        // Změnit ./chunks/ na ../chunks/ protože soubory jsou nyní v dist/cjs/
+        content = content.replace(/(['"])\.\/chunks\//g, '$1../chunks/')
+        fs.writeFileSync(filePath, content, 'utf-8')
+      }
+    }
+
     // Vyčistit bare zod importy z ESM souborů
     const indexJs = path.join(esmDir, 'index.js')
     if (fs.existsSync(indexJs)) {
