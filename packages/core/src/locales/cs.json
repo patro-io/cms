@@ -475,6 +475,8 @@
       "selectLanguageError": "Prosím vyberte cílový jazyk",
       "invalidContentId": "Neplatné ID obsahu",
       "creatingTranslation": "Vytvářím překlad...",
+      "creatingAiTranslation": "Vytvářím AI překlad, chvíli strpení...",
+      "aiTranslationInProgress": "AI překlad probíhá, načítám přeložený obsah...",
       "translationCreated": "Překlad úspěšně vytvořen!",
       "translationError": "Chyba při vytváření překladu",
       "noTranslations": "Žádné další překlady",

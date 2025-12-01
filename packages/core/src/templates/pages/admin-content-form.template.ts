@@ -347,19 +347,19 @@ function renderTranslationsWidget(data: ContentFormData, t: TranslateFn, isEdit:
         const useAi = document.getElementById('use-ai-translation').checked;
         
         if (!targetLanguage) {
-          showNotification('${t('content.form.selectLanguageError') || 'Please select a target language'}', 'error');
+          showNotification('${t('content.form.selectLanguageError') || 'Prosím vyberte cílový jazyk'}', 'error');
           return;
         }
         
         if (!currentContentIdForTranslation) {
-          showNotification('${t('content.form.invalidContentId') || 'Invalid content ID'}', 'error');
+          showNotification('${t('content.form.invalidContentId') || 'Neplatné ID obsahu'}', 'error');
           return;
         }
         
         // Show loading state
         const loadingMessage = useAi
-          ? '${t('content.form.creatingAiTranslation') || 'Creating AI translation, please wait...'}'
-          : '${t('content.form.creatingTranslation') || 'Creating translation...'}';
+          ? '${t('content.form.creatingAiTranslation') || 'Vytvářím AI překlad, chvíli strpení...'}'
+          : '${t('content.form.creatingTranslation') || 'Vytvářím překlad...'}';
         showNotification(loadingMessage, 'info');
         
         fetch('/admin/content/' + currentContentIdForTranslation + '/translate', {
@@ -377,77 +377,26 @@ function renderTranslationsWidget(data: ContentFormData, t: TranslateFn, isEdit:
           if (data.success) {
             hideCreateTranslationModal();
             
-            // Pro AI překlad počkáme déle a zkontrolujeme, jestli je hotový
+            // Pro AI překlad počkáme déle (5 sekund) než se přesměrujeme
             if (useAi) {
-              showNotification('${t('content.form.aiTranslationInProgress') || 'AI translation in progress, waiting for completion...'}', 'info');
-              
-              // Polling mechanismus - kontroluje každé 2 sekundy, jestli je překlad hotový
-              let attempts = 0;
-              const maxAttempts = 15; // Maximum 30 sekund (15 x 2s)
-              
-              const checkTranslation = () => {
-                attempts++;
-                
-                fetch('/admin/content/' + data.contentId, {
-                  headers: {
-                    'Accept': 'application/json'
-                  }
-                })
-                .then(response => response.json())
-                .then(checkData => {
-                  // Kontrolujeme, jestli má obsah nějaký text (není prázdný)
-                  const hasContent = checkData.data && (
-                    checkData.title ||
-                    (checkData.data && Object.keys(checkData.data).length > 0)
-                  );
-                  
-                  if (hasContent) {
-                    // Překlad je hotový!
-                    showNotification('${t('content.form.translationCompleted') || 'Translation completed successfully!'}', 'success');
-                    setTimeout(() => {
-                      window.location.href = '/admin/content/' + data.contentId + '/edit';
-                    }, 1000);
-                  } else if (attempts < maxAttempts) {
-                    // Zkusíme to znovu za 2 sekundy
-                    setTimeout(checkTranslation, 2000);
-                  } else {
-                    // Timeout - přesměrujeme i tak, ale s varováním
-                    showNotification('${t('content.form.translationTakingLong') || 'Translation is taking longer than expected, redirecting...'}', 'warning');
-                    setTimeout(() => {
-                      window.location.href = '/admin/content/' + data.contentId + '/edit';
-                    }, 2000);
-                  }
-                })
-                .catch(error => {
-                  console.error('Error checking translation:', error);
-                  if (attempts < maxAttempts) {
-                    setTimeout(checkTranslation, 2000);
-                  } else {
-                    // Po timeoutu přesměrujeme i tak
-                    setTimeout(() => {
-                      window.location.href = '/admin/content/' + data.contentId + '/edit';
-                    }, 2000);
-                  }
-                });
-              };
-              
-              // Začneme kontrolovat po 3 sekundách
-              setTimeout(checkTranslation, 3000);
-              
-            } else {
-              // Pro manuální překlad přesměrujeme rovnou
-              showNotification('${t('content.form.translationCreated') || 'Translation created successfully!'}', 'success');
+              showNotification('${t('content.form.aiTranslationInProgress') || 'AI překlad probíhá, načítám přeložený obsah...'}', 'success');
               setTimeout(() => {
                 window.location.href = '/admin/content/' + data.contentId + '/edit';
-              }, 1000);
+              }, 5000);
+            } else {
+              // Pro manuální překlad přesměrujeme rychleji
+              showNotification('${t('content.form.translationCreated') || 'Překlad vytvořen!'}', 'success');
+              setTimeout(() => {
+                window.location.href = '/admin/content/' + data.contentId + '/edit';
+              }, 1500);
             }
           } else {
-            showNotification(data.error || '${t('content.form.translationError') || 'Error creating translation'}', 'error');
+            showNotification(data.error || '${t('content.form.translationError') || 'Chyba při vytváření překladu'}', 'error');
           }
         })
         .catch(error => {
           console.error('Error creating translation:', error);
-          showNotification('${t('content.form.translationError') || 'Error creating translation'}', 'error');
+          showNotification('${t('content.form.translationError') || 'Chyba při vytváření překladu'}', 'error');
         });
       }
 
