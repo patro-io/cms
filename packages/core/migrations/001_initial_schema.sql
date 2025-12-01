@@ -129,22 +129,15 @@ CREATE INDEX IF NOT EXISTS idx_api_tokens_token ON api_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_workflow_history_content ON workflow_history(content_id);
 CREATE INDEX IF NOT EXISTS idx_workflow_history_user ON workflow_history(user_id);
 
--- Insert default admin user (password: patro!)
-INSERT OR IGNORE INTO users (
-  id, email, username, first_name, last_name, password_hash, 
-  role, is_active, created_at, updated_at
-) VALUES (
-  'admin-user-id',
-  'admin@patro.io',
-  'admin',
-  'Admin',
-  'User',
-  'd1c379e871838f44e21d5a55841349e50636f06df139bfef11870eec74c381db', -- SHA-256 hash of 'patro!'
-  'admin',
-  1,
-  strftime('%s', 'now') * 1000,
-  strftime('%s', 'now') * 1000
-);
+-- Admin user is NO LONGER created in migrations for security reasons
+-- Instead, use one of these methods to create an admin user:
+--
+-- 1. During installation: pnpm create @patro-io/cms creates admin with random password
+-- 2. Manual seeding: pnpm run seed (creates admin with random password)
+-- 3. Custom credentials: ADMIN_EMAIL=your@email.com ADMIN_PASSWORD=YourPass pnpm run seed
+-- 4. First user registration: Visit /auth/register (becomes admin automatically)
+--
+-- This ensures each installation has a unique, secure admin password.
 
 -- Sample collections are now defined in code (packages/core/src/collections/*.collection.ts)
 -- They will be automatically synced by Collection Sync Service on application startup
