@@ -9,6 +9,7 @@
     "@patro-io/templates": "2.0.0"
   },
   "changesets": [
+    "bumpy-hoops-rule",
     "honest-islands-begin",
     "many-flowers-unite",
     "slow-brooms-occur",

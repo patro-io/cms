@@ -1,5 +1,11 @@
 # @patro-io/create-cms
 
+## 0.1.0-beta.5
+
+### Patch Changes
+
+-
+
 ## 0.1.0-beta.4
 
 ### Patch Changes
