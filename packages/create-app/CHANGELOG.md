@@ -1,5 +1,13 @@
 # @patro-io/create-cms
 
+## 0.1.0-beta.6
+
+### Patch Changes
+
+- - Fix hardcoded admin credentials in seed script
+  - Refactor build output for clarity
+  - Add platform dispose() to prevent memory leaks
+
 ## 0.1.0-beta.5
 
 ### Patch Changes
