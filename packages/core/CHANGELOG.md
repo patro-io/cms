@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-beta.7
+
+### Patch Changes
+
+- - Corrected relative chunk paths
+  - Updated paths after build
+
 ## 0.1.0-beta.6
 
 ### Patch Changes
