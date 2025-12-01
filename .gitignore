@@ -92,3 +92,4 @@ test-field-edit-old.js
 
 .vscode/settings.json
 my-patro-app/wrangle.local.jsonc
+my-patro-app/wrangle.dev.jsonc
