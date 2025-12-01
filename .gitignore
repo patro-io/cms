@@ -91,5 +91,4 @@ PUBLISHING-OLD.md
 test-field-edit-old.js
 
 .vscode/settings.json
-my-patro-app/wrangle.local.jsonc
-my-patro-app/wrangle.dev.jsonc
+my-patro-app/wrangler.dev.jsonc
