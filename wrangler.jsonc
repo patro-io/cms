@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "patro-cms",
+  "main": "my-patro-app/src/index.ts",
+  "compatibility_date": "2025-07-18",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  // Definice databáze, aby ji Deploy Button vytvořil
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "patro-cms-db",
+      "database_id": "xxx"
+    }
+  ],
+  // Pokud používáš Workers AI, přidej i toto
+  "ai": {
+    "binding": "AI"
+  }
+}
