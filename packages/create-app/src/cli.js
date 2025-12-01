@@ -469,7 +469,6 @@ async function copyTemplate(templateName, targetDir, options) {
 async function createAdminSeedScript(targetDir, { email, password }) {
   const seedScriptContent = `import { createDb, users } from '@patro-io/cms'
 import { eq } from 'drizzle-orm'
-import bcrypt from 'bcryptjs'
 
 /**
  * Seed script to create initial admin user
@@ -485,10 +484,25 @@ interface Env {
   DB: D1Database
 }
 
+/**
+ * Hash password using the same SHA-256 method as AuthService
+ * This ensures compatibility with the login system
+ */
+async function hashPassword(password: string, salt: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password + salt)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 async function seed() {
   // Get credentials from environment or use setup values
   const adminEmail = process.env.ADMIN_EMAIL || '${email}'
   const adminPassword = process.env.ADMIN_PASSWORD || '${password}'
+  
+  // Get password salt from environment or use default (must match AuthService)
+  const passwordSalt = process.env.PASSWORD_SALT || 'salt-change-in-production'
 
   // Get D1 database from Cloudflare environment
   // @ts-ignore - getPlatformProxy is available in wrangler
@@ -523,21 +537,23 @@ async function seed() {
       return
     }
 
-    // Hash password using bcrypt
-    const passwordHash = await bcrypt.hash(adminPassword, 10)
+    // Hash password using SHA-256 (same as AuthService)
+    const passwordHash = await hashPassword(adminPassword, passwordSalt)
 
     // Create admin user
     await db
       .insert(users)
       .values({
+        id: crypto.randomUUID(),
         email: adminEmail,
         username: adminEmail.split('@')[0],
-        password_hash: passwordHash,
+        firstName: 'Admin',
+        lastName: 'User',
+        passwordHash: passwordHash,
         role: 'admin',
-        is_active: 1,
-        email_verified: 1,
-        created_at: Date.now(),
-        updated_at: Date.now()
+        isActive: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
       })
       .run()
 

@@ -19,10 +19,14 @@
     // R2 Bucket for media storage
     "r2_buckets": [
         {
-            "binding": "BUCKET",
+            "binding": "MEDIA_BUCKET",
             "bucket_name": "my-patro-media"
         }
     ],
+    // AI binding for translations
+    "ai": {
+        "binding": "AI"
+    },
     // Environment variables
     "vars": {
         "ENVIRONMENT": "development"

@@ -1,24 +1,38 @@
 import { createDb, users } from '@patro-io/cms'
 import { eq } from 'drizzle-orm'
-import bcrypt from 'bcryptjs'
 
 /**
  * Seed script to create initial admin user
  *
  * Run this script after migrations:
- * npm run db:migrate:local
- * npm run seed
+ * pnpm db:migrate:local
+ * pnpm seed
  *
  * Admin credentials:
  * Email: admin@patro.io
- * Password: [as entered during setup]
+ * Password: patro!
  */
 
 interface Env {
   DB: D1Database
 }
 
+/**
+ * Hash password using the same SHA-256 method as AuthService
+ * This ensures compatibility with the login system
+ */
+async function hashPassword(password: string, salt: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(password + salt)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 async function seed() {
+  // Get password salt from environment or use default (must match AuthService)
+  const passwordSalt = process.env.PASSWORD_SALT || 'salt-change-in-production'
+  
   // Get D1 database from Cloudflare environment
   // @ts-ignore - getPlatformProxy is available in wrangler
   const { env } = await import('@cloudflare/workers-types/experimental')
@@ -30,7 +44,7 @@ async function seed() {
     console.error('Make sure you have:')
     console.error('1. Created your D1 database: wrangler d1 create <database-name>')
     console.error('2. Updated wrangler.jsonc with the database_id')
-    console.error('3. Run migrations: npm run db:migrate:local')
+    console.error('3. Run migrations: pnpm db:migrate:local')
     console.error('')
     process.exit(1)
   }
@@ -52,20 +66,23 @@ async function seed() {
       return
     }
 
-    // Hash password using bcrypt
-    const passwordHash = await bcrypt.hash('patro!', 10)
+    // Hash password using SHA-256 (same as AuthService)
+    const passwordHash = await hashPassword('patro!', passwordSalt)
 
     // Create admin user
     await db
       .insert(users)
       .values({
+        id: crypto.randomUUID(),
         email: 'admin@patro.io',
         username: 'admin',
-        password: passwordHash,
+        firstName: 'Admin',
+        lastName: 'User',
+        passwordHash: passwordHash,
         role: 'admin',
-        isActive: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        isActive: true,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
       })
       .run()
 
