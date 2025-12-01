@@ -701,34 +701,56 @@ async function runDatabaseMigrations(targetDir) {
 }
 
 /**
- * Seeduje admin uživatele do databáze pomocí seed scriptu
+ * Seeduje admin uživatele přímo do databáze pomocí wrangler d1 execute
  * @param {string} targetDir
  * @param {string} password
  */
 async function seedAdminUser(targetDir, password) {
-  const packageManager = await detectPackageManager();
-  const runCmd = packageManager === 'npm' ? 'run' : packageManager === 'yarn' ? '' : 'run';
+  // Hashujeme heslo s výchozím saltem (stejným jako používá AuthService)
+  const passwordSalt = 'salt-change-in-production';
+  const passwordHash = await hashPassword(password, passwordSalt);
   
-  // Nastavíme heslo přes environment variable pro seed script
-  const env = {
-    ...process.env,
-    ADMIN_EMAIL: 'admin@patro.io',
-    ADMIN_PASSWORD: password
-  };
+  const adminEmail = 'admin@patro.io';
+  const userId = crypto.randomUUID();
+  const now = Date.now();
   
-  // Spustíme existující seed script
+  // Přečteme wrangler.jsonc pro získání database_name
+  const wranglerPath = path.join(targetDir, 'wrangler.jsonc');
+  const wranglerContent = await fs.readFile(wranglerPath, 'utf-8');
+  const dbNameMatch = wranglerContent.match(/"database_name"\s*:\s*"([^"]+)"/);
+  
+  if (!dbNameMatch) {
+    throw new Error('Could not find database_name in wrangler.jsonc');
+  }
+  
+  const databaseName = dbNameMatch[1];
+  
+  // Vytvoříme SQL soubor (wrangler d1 execute --file je spolehlivější než --command)
+  const sqlContent = `INSERT INTO users (id, email, username, first_name, last_name, password_hash, role, language, is_active, created_at, updated_at)
+VALUES ('${userId}', '${adminEmail}', 'admin', 'Admin', 'User', '${passwordHash}', 'admin', NULL, 1, ${now}, ${now});`;
+  
+  const sqlFile = path.join(targetDir, '.seed-admin-temp.sql');
+  await fs.writeFile(sqlFile, sqlContent);
+  
   try {
-    await execa(
-      packageManager,
-      [runCmd, 'seed'].filter(Boolean),
-      {
-        cwd: targetDir,
-        env,
-        stdio: 'pipe', // Zachytíme output aby se nezobrazovalo heslo dvakrát
-        reject: false
-      }
-    );
+    // Spustíme SQL přes wrangler d1 execute --file (stejně jako migrations)
+    await execa('wrangler', [
+      'd1',
+      'execute',
+      databaseName,
+      '--local',
+      '--file',
+      '.seed-admin-temp.sql'
+    ], {
+      cwd: targetDir,
+      stdio: 'pipe'
+    });
+    
+    // Smažeme dočasný SQL soubor
+    await fs.remove(sqlFile);
   } catch (error) {
+    // Smažeme dočasný SQL soubor i při chybě
+    await fs.remove(sqlFile).catch(() => {});
     throw new Error(`Failed to seed admin user: ${error.message}`);
   }
 }
