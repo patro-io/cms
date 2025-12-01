@@ -1,100 +1,85 @@
 {
-	"name": "patrocms",
-	"main": "src/index.ts",
-	"compatibility_date": "2025-07-18",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"routes": [
+  "name": "patro-cms",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-07-18",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  // Cloudflare Workers settings
+  "workers_dev": true,
+  // D1 Database
+  "d1_databases": [
     {
-      "pattern": "demo.patro.io",
-      "custom_domain": true
+      "binding": "DB",
+      "database_name": "patro-cms-db",
+      "migrations_dir": "../packages/core/migrations"
     }
   ],
-	// Cloudflare Workers settings
-	"workers_dev": true,
-	// D1 Database (Default/Dev)
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "my-patro-app-db",
-			"database_id": "67ff178a-d45d-4936-97df-4f41984926ea",
-			"migrations_dir": "../packages/core/migrations"
-		}
-	],
-	// R2 Bucket (Default/Dev)
-	"r2_buckets": [
-		{
-			"binding": "MEDIA_BUCKET",
-			"bucket_name": "my-patro-app-media"
-		}
-	],
-	// KV Cache (Default/Dev)
-	"kv_namespaces": [
-		{
-			"binding": "CACHE_KV",
-			"id": "645e4b7c59d24c6cbe94113d8839d836",
-			"preview_id": "645e4b7c59d24c6cbe94113d8839d836"
-		}
-	],
-	// Workers AI
-	"ai": {
-		"binding": "AI"
-	},
-	// Environment variables
-	"vars": {
-		"ENVIRONMENT": "development"
-	},
-	"dev": {
-		// Forces Workerd to listen on 127.0.0.1 instead of 'localhost' 
-		"ip": "127.0.0.1"
-	},
-	// Production environment
-	"env": {
-		"production": {
-			"name": "patrocms",
-			// Workers AI
-			"ai": {
-				"binding": "AI"
-			},
-			"vars": {
-				"ENVIRONMENT": "production"
-			},
-			"d1_databases": [
-				{
-					"binding": "DB",
-					"database_name": "my-patro-app-db",
-					"database_id": "67ff178a-d45d-4936-97df-4f41984926ea",
-					"migrations_dir": "../packages/core/migrations"
-				}
-			],
-			"r2_buckets": [
-				{
-					"binding": "MEDIA_BUCKET",
-					"bucket_name": "my-patro-app-media"
-				}
-			],
-			"kv_namespaces": [
-				{
-					"binding": "CACHE_KV",
-					"id": "645e4b7c59d24c6cbe94113d8839d836"
-				}
-			]
-		}
-	},
-	// Observability
-	"observability": {
-		"enabled": true
-	},
-	// Build configuration
-	"rules": [
-		{
-			"type": "ESModule",
-			"globs": [
-				"**/*.ts",
-				"**/*.js"
-			],
-			"fallthrough": true
-		}
-	]
+  // R2 Bucket
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "patro-cms-media"
+    }
+  ],
+  // KV Cache
+  "kv_namespaces": [
+    {
+      "binding": "CACHE_KV" 
+    }
+  ],
+  // Workers AI
+  "ai": {
+    "binding": "AI"
+  },
+  // Environment variables
+  "vars": {
+    "ENVIRONMENT": "development"
+  },
+  "dev": {
+    "ip": "127.0.0.1"
+  },
+  // Production environment
+  "env": {
+    "production": {
+      "name": "patro-cms",
+      "ai": {
+        "binding": "AI"
+      },
+      "vars": {
+        "ENVIRONMENT": "production"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "patro-cms-db",
+          "migrations_dir": "../packages/core/migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "MEDIA_BUCKET",
+          "bucket_name": "patro-cms-media"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "CACHE_KV"
+        }
+      ]
+    }
+  },
+  "observability": {
+    "enabled": true
+  },
+  "rules": [
+    {
+      "type": "ESModule",
+      "globs": [
+        "**/*.ts",
+        "**/*.js"
+      ],
+      "fallthrough": true
+    }
+  ]
 }
