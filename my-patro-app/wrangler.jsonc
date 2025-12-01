@@ -2,12 +2,7 @@
   "name": "patro-cms",
   "main": "src/index.ts",
   "compatibility_date": "2025-07-18",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
-  // Cloudflare Workers settings
-  "workers_dev": true,
-  // D1 Database
+  "compatibility_flags": ["nodejs_compat"],
   "d1_databases": [
     {
       "binding": "DB",
@@ -15,71 +10,22 @@
       "migrations_dir": "../packages/core/migrations"
     }
   ],
-  // R2 Bucket
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
       "bucket_name": "patro-cms-media"
     }
   ],
-  // KV Cache
   "kv_namespaces": [
     {
-      "binding": "CACHE_KV" 
+      "binding": "CACHE_KV",
+      "id": "" 
     }
   ],
-  // Workers AI
   "ai": {
     "binding": "AI"
   },
-  // Environment variables
   "vars": {
     "ENVIRONMENT": "development"
-  },
-  "dev": {
-    "ip": "127.0.0.1"
-  },
-  // Production environment
-  "env": {
-    "production": {
-      "name": "patro-cms",
-      "ai": {
-        "binding": "AI"
-      },
-      "vars": {
-        "ENVIRONMENT": "production"
-      },
-      "d1_databases": [
-        {
-          "binding": "DB",
-          "database_name": "patro-cms-db",
-          "migrations_dir": "../packages/core/migrations"
-        }
-      ],
-      "r2_buckets": [
-        {
-          "binding": "MEDIA_BUCKET",
-          "bucket_name": "patro-cms-media"
-        }
-      ],
-      "kv_namespaces": [
-        {
-          "binding": "CACHE_KV"
-        }
-      ]
-    }
-  },
-  "observability": {
-    "enabled": true
-  },
-  "rules": [
-    {
-      "type": "ESModule",
-      "globs": [
-        "**/*.ts",
-        "**/*.js"
-      ],
-      "fallthrough": true
-    }
-  ]
+  }
 }
