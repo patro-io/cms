@@ -20,7 +20,7 @@
 // Main Application API (Phase 2 Week 1)
 // ============================================================================
 
-export { createPatroCMSApp, setupCoreMiddleware, setupCoreRoutes } from './app'
+export { createPatroCMSApp, registerCollections, setupCoreMiddleware, setupCoreRoutes } from './app'
 export type { Bindings, PatroCMSApp, PatroCMSConfig, Variables } from './app'
 export { CollectionLoaderService, makeCollectionLoaderServiceLayer } from './services'
 

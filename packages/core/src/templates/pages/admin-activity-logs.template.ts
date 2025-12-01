@@ -177,7 +177,7 @@ export function renderActivityLogsPage(data: ActivityLogsPageData): string {
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ${getActionBadgeClass(log.action)}">
-                      ${formatAction(log.action)}
+                      ${getActionTranslation(log.action, t)}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -264,10 +264,39 @@ function getActionBadgeClass(action: string): string {
   }
 }
 
-function formatAction(action: string): string {
-  // Convert action from dot notation to readable format
-  return action
+/**
+ * Převede akci na přeložený text
+ * Příklad: "users.list_view" -> camelCase "usersListView" -> t("activityLogs.actions.usersListView")
+ */
+function getActionTranslation(action: string, t: TranslateFn): string {
+  // Převést dot.snake_case na camelCase
+  const camelCaseAction = action
     .split('.')
-    .map(part => part.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
-    .join(' - ')
+    .map((part, index) => {
+      // První část ponechat lowercase, další první písmeno uppercase
+      const camelPart = part
+        .split('_')
+        .map((word, wordIndex) => {
+          if (index === 0 && wordIndex === 0) return word.toLowerCase()
+          return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        })
+        .join('')
+      return camelPart
+    })
+    .join('')
+  
+  const translationKey = `activityLogs.actions.${camelCaseAction}`
+  
+  // Pokusit se získat překlad, fallback na formátovaný action
+  const translation = t(translationKey)
+  
+  // Pokud překlad neexistuje (vrátí se klíč), použít fallback formátování
+  if (translation === translationKey) {
+    return action
+      .split('.')
+      .map(part => part.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))
+      .join(' - ')
+  }
+  
+  return translation
 }

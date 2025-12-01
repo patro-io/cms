@@ -34,6 +34,8 @@ import { createSeedDataAdminRoutes } from './plugins/core-plugins/seed-data-plug
 import { emailPlugin } from './plugins/core-plugins/email-plugin'
 import type { TranslateFn, Locale, I18nService } from './services/i18n'
 import { FullAppConfig } from './config/app-config.js'
+import type { CollectionConfig } from './types/collection-config'
+import { makeCollectionLoaderService } from './services/collection-loader'
 
 // ============================================================================
 // Type Definitions
@@ -102,6 +104,38 @@ export interface PatroCMSConfig {
 }
 
 export type PatroCMSApp = Hono<{ Bindings: Bindings; Variables: Variables }>
+
+// ============================================================================
+// Collection Registration Helper
+// ============================================================================
+
+/**
+ * Register collection configurations to be synced to the database.
+ * Call this BEFORE creating the app to ensure collections are available during bootstrap.
+ *
+ * @param collections - Array of collection configurations to register
+ *
+ * @example
+ * ```typescript
+ * import { registerCollections, createPatroCMSApp } from '@patro-io/cms'
+ * import blogPostsCollection from './collections/blog-posts.collection'
+ *
+ * // Register collections before app creation
+ * registerCollections([blogPostsCollection])
+ *
+ * export default createPatroCMSApp({
+ *   collections: { autoSync: true }
+ * })
+ * ```
+ */
+export function registerCollections(collections: CollectionConfig[]): void {
+  const loaderService = makeCollectionLoaderService()
+  
+  // Run registration synchronously using Effect.runSync
+  Effect.runSync(loaderService.registerCollections(collections))
+  
+  console.log(`📦 Registered ${collections.length} collection configuration(s)`)
+}
 
 // ============================================================================
 // Application Factory

@@ -1360,11 +1360,29 @@ userRoutes.post('/profile/avatar', (c) => {
       }
     }
 
-    // For now, simulate storing the avatar
-    const avatarUrl = `/uploads/avatars/${user!.userId}-${Date.now()}.${avatarFile.type.split('/')[1]}`
+    // Generovat unikátní název souboru
+    const fileExtension = avatarFile.type.split('/')[1]
+    const fileName = `${user!.userId}-${Date.now()}.${fileExtension}`
+    const objectKey = `avatars/${fileName}`
+
+    // Nahrát soubor do R2
+    yield* Effect.tryPromise({
+      try: async () => {
+        const arrayBuffer = await avatarFile.arrayBuffer()
+        await c.env.MEDIA_BUCKET.put(objectKey, arrayBuffer, {
+          httpMetadata: {
+            contentType: avatarFile.type
+          }
+        })
+      },
+      catch: (error) => new Error(`Failed to upload avatar to R2: ${error}`)
+    })
+
+    // URL pro přístup k souboru přes /files/ route
+    const avatarUrl = `/files/${objectKey}`
 
     // Update user avatar
-    yield* 
+    yield*
       userService.updateUser(user!.userId, {
         avatar_url: avatarUrl
       })

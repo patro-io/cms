@@ -437,8 +437,10 @@ async function copyTemplate(templateName, targetDir, options) {
     await fs.rename(gitignoreTemplatePath, gitignorePath);
   }
 
-  // Remove example collection if not wanted
+  // Update index.ts based on includeExample option
+  const indexTsPath = path.join(targetDir, "src/index.ts");
   if (!options.includeExample) {
+    // Remove example collection file
     const examplePath = path.join(
       targetDir,
       "src/collections/blog-posts.collection.ts"
@@ -446,6 +448,13 @@ async function copyTemplate(templateName, targetDir, options) {
     if (fs.existsSync(examplePath)) {
       await fs.remove(examplePath);
     }
+    
+    // Remove import and registerCollections from index.ts
+    let indexContent = await fs.readFile(indexTsPath, 'utf-8');
+    indexContent = indexContent
+      .replace(/import blogPostsCollection from '\.\/collections\/blog-posts\.collection'\n/, '')
+      .replace(/\n\/\/ Register collections before app creation[\s\S]*?registerCollections\(\[blogPostsCollection\]\)\n/, '\n');
+    await fs.writeFile(indexTsPath, indexContent);
   }
 
   // Create admin seed script
@@ -523,11 +532,12 @@ async function seed() {
       .values({
         email: adminEmail,
         username: adminEmail.split('@')[0],
-        password: passwordHash,
+        password_hash: passwordHash,
         role: 'admin',
-        isActive: 1,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        is_active: 1,
+        email_verified: 1,
+        created_at: Date.now(),
+        updated_at: Date.now()
       })
       .run()
 
