@@ -9,6 +9,7 @@
     "@patro-io/templates": "2.0.0"
   },
   "changesets": [
+    "honest-islands-begin",
     "tasty-lands-start",
     "tough-humans-carry"
   ]
