@@ -1,5 +1,11 @@
 # @patro-io/create-cms
 
+## 0.1.0-beta.4
+
+### Patch Changes
+
+- - Fix activity log translations
+
 ## 0.1.0-beta.3
 
 ### Patch Changes
