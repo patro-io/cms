@@ -10,11 +10,27 @@ import type { D1Database } from '@cloudflare/workers-types'
  * pnpm db:migrate:local
  * pnpm seed
  *
- * Admin credentials will be read from environment or use defaults below
+ * Admin credentials will be read from environment or generated randomly
  */
 
 interface Env {
   DB: D1Database
+}
+
+/**
+ * Generuje náhodné bezpečné heslo
+ */
+function generateSecurePassword(): string {
+  const length = 16
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'
+  const randomBytes = crypto.getRandomValues(new Uint8Array(length))
+  let password = ''
+  
+  for (let i = 0; i < length; i++) {
+    password += charset[randomBytes[i] % charset.length]
+  }
+  
+  return password
 }
 
 /**
@@ -30,9 +46,10 @@ async function hashPassword(password: string, salt: string): Promise<string> {
 }
 
 async function seed() {
-  // Get credentials from environment or use setup values
+  // Get credentials from environment or generate secure defaults
   const adminEmail = process.env.ADMIN_EMAIL || 'admin@patro.io'
-  const adminPassword = process.env.ADMIN_PASSWORD || 'patro!'
+  const adminPassword = process.env.ADMIN_PASSWORD || generateSecurePassword()
+  const isPasswordGenerated = !process.env.ADMIN_PASSWORD
   
   // Get password salt from environment or use default (must match AuthService)
   const passwordSalt = process.env.PASSWORD_SALT || 'salt-change-in-production'
@@ -105,9 +122,15 @@ async function seed() {
       .run()
 
     console.log('✓ Admin user created successfully')
-    console.log(`  Email: ${adminEmail}`)
-    console.log(`  Role: admin`)
+    console.log(`  Email:    ${adminEmail}`)
+    console.log(`  Password: ${adminPassword}`)
+    console.log(`  Role:     admin`)
     console.log('')
+    if (isPasswordGenerated) {
+      console.log('⚠ IMPORTANT: Save this password! It was randomly generated.')
+      console.log('  You can change it after first login in admin settings.')
+      console.log('')
+    }
     console.log('You can now login at: http://localhost:8787/auth/login')
     
     // Dispose platform proxy after successful seed

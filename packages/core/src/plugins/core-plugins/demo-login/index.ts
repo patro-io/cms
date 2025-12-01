@@ -4,8 +4,13 @@ import type { Plugin, PluginContext, HookHandler } from '@patro-io/cms'
 /**
  * Demo Login Plugin
  *
- * Prefills the login form with demo credentials (admin@patro.io/patro!)
+ * ⚠️ SECURITY WARNING: This plugin is for DEMO/DEVELOPMENT purposes only!
+ *
+ * Prefills the login form with demo credentials (demo@example.com/demo123!)
  * when activated, making it easy for demo site visitors to log in.
+ *
+ * DO NOT use this plugin in production with real admin accounts!
+ * Create a dedicated demo user account if you need this functionality.
  */
 
 const demoLoginAssets = {
@@ -19,15 +24,15 @@ const demoLoginAssets = {
         const passwordInput = document.getElementById('password');
         
         if (emailInput && passwordInput) {
-          emailInput.value = 'admin@patro.io';
-          passwordInput.value = 'patro!';
+          emailInput.value = 'demo@example.com';
+          passwordInput.value = 'demo123!';
           
           // Add visual indication that form is prefilled
           const form = emailInput.closest('form');
           if (form) {
             const notice = document.createElement('div');
-            notice.className = 'mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 text-sm';
-            notice.innerHTML = '🎯 <strong>Demo Mode:</strong> Login form prefilled with demo credentials';
+            notice.className = 'mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-900 text-sm';
+            notice.innerHTML = '⚠️ <strong>Demo Mode Active:</strong> Login form prefilled with demo credentials (demo@example.com/demo123!)';
             form.insertBefore(notice, form.firstChild);
           }
         }
@@ -69,7 +74,7 @@ const loginPrefillHook: HookHandler = async (data: any, _context: any) => {
 const demoLoginPlugin = PluginBuilder.create({
   name: 'demo-login-plugin',
   version: '1.0.0-beta.1',
-  description: 'Prefills login form with demo credentials for easy site demonstration',
+  description: '⚠️ DEMO ONLY: Prefills login with demo@example.com/demo123! - NOT for production!',
   author: {
     name: 'PatroCMS'
   }
@@ -77,7 +82,7 @@ const demoLoginPlugin = PluginBuilder.create({
   .addHook('template:render', loginPrefillHook)
   .addHook('page:before-render', loginPrefillHook)
   .metadata({
-    description: 'Prefills login form with demo credentials (admin@patro.io/patro!) for easy site demonstration',
+    description: '⚠️ DEMO/DEV ONLY: Prefills login form with demo credentials (demo@example.com/demo123!). Create dedicated demo user to use this plugin.',
     author: {
       name: 'PatroCMS'
     },

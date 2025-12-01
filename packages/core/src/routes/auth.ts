@@ -987,6 +987,7 @@ authRoutes.post('/login/form', (c) => {
 })
 
 // Test seeding endpoint (only for development/testing) with Pure Effect
+// SECURITY NOTE: This endpoint is for development only and should be disabled in production
 authRoutes.post('/seed-admin', (c) => {
   const program = Effect.gen(function* (_) {
     const db = c.env.DB
@@ -994,7 +995,7 @@ authRoutes.post('/seed-admin', (c) => {
     const authService = yield* AuthService
     
     // First ensure the users table exists
-    yield* 
+    yield*
       dbService.execute(`
         CREATE TABLE IF NOT EXISTS users (
           id TEXT PRIMARY KEY,
@@ -1014,7 +1015,7 @@ authRoutes.post('/seed-admin', (c) => {
     
     
     // Check if admin user already exists
-    const existingAdmin = yield* 
+    const existingAdmin = yield*
       dbService.queryFirst<{ id: string }>(
         'SELECT id FROM users WHERE email = ? OR username = ?',
         ['admin@patro.io', 'admin']
@@ -1025,18 +1026,8 @@ authRoutes.post('/seed-admin', (c) => {
     
 
     if (existingAdmin) {
-      // Update the password to ensure it's correct for testing
-      const passwordHash = yield* authService.hashPassword('patro!')
-      
-      yield* 
-        dbService.execute(
-          'UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?',
-          [passwordHash, Date.now(), existingAdmin.id]
-        )
-      
-
       return {
-        message: 'Admin user already exists (password updated)',
+        message: 'Admin user already exists. Use /auth/register to create a new user.',
         user: {
           id: existingAdmin.id,
           email: 'admin@patro.io',
@@ -1046,15 +1037,20 @@ authRoutes.post('/seed-admin', (c) => {
       }
     }
 
+    // Generate a random secure password (16 characters)
+    const randomPassword = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map(byte => 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*'[byte % 72])
+      .join('')
+    
     // Hash password using AuthService
-    const passwordHash = yield* authService.hashPassword('patro!')
+    const passwordHash = yield* authService.hashPassword(randomPassword)
     
     // Create admin user
-    const userId = 'admin-user-id'
+    const userId = crypto.randomUUID()
     const now = Date.now()
     const adminEmail = 'admin@patro.io'.toLowerCase()
     
-    yield* 
+    yield*
       dbService.execute(
         `INSERT INTO users (id, email, username, first_name, last_name, password_hash, role, language, is_active, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -1076,7 +1072,8 @@ authRoutes.post('/seed-admin', (c) => {
         username: 'admin',
         role: 'admin'
       },
-      passwordHash: passwordHash
+      password: randomPassword,
+      warning: 'SAVE THIS PASSWORD! It will not be shown again.'
     }
   })
   

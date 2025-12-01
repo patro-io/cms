@@ -8,6 +8,7 @@ import path from "path";
 import prompts from "prompts";
 import { fileURLToPath } from "url";
 import validatePackageName from "validate-npm-package-name";
+import crypto from "crypto";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -24,6 +25,37 @@ const TEMPLATES = {
     color: "blue",
   },
 };
+
+/**
+ * Generuje náhodné bezpečné heslo
+ * @returns {string} Náhodné heslo (16 znaků)
+ */
+function generateSecurePassword() {
+  const length = 16;
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  const randomBytes = crypto.randomBytes(length);
+  let password = "";
+  
+  for (let i = 0; i < length; i++) {
+    password += charset[randomBytes[i] % charset.length];
+  }
+  
+  return password;
+}
+
+/**
+ * Hashuje heslo pomocí SHA-256 (stejná metoda jako AuthService)
+ * @param {string} password
+ * @param {string} salt
+ * @returns {Promise<string>}
+ */
+async function hashPassword(password, salt) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + salt);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 // Banner
 console.log();
@@ -338,7 +370,27 @@ async function createProject(answers, flags) {
       answers.migrationsRan = false;
     }
 
-    // 7. Seed admin user - REMOVED
+    // 7. Seed admin user
+    if (!skipInstall && answers.migrationsRan) {
+      spinner.start("Creating admin user...");
+      try {
+        const adminPassword = generateSecurePassword();
+        await seedAdminUser(targetDir, adminPassword);
+        answers.adminPassword = adminPassword;
+        answers.adminSeeded = true;
+        spinner.succeed("Admin user created");
+      } catch (error) {
+        spinner.warn("Failed to seed admin user");
+        console.log(kleur.dim(`${error.message}`));
+        console.log(
+          kleur.dim("You can create admin manually after: pnpm run seed")
+        );
+        answers.adminSeeded = false;
+      }
+    } else if (!skipInstall && !answers.migrationsRan) {
+      spinner.info("Skipping admin user - migrations not complete");
+      answers.adminSeeded = false;
+    }
 
     spinner.succeed(kleur.bold().green("✓ Project created successfully!"));
   } catch (error) {
@@ -648,7 +700,56 @@ async function runDatabaseMigrations(targetDir) {
   }
 }
 
-// seedAdminUser function REMOVED
+/**
+ * Seeduje admin uživatele do databáze
+ * @param {string} targetDir
+ * @param {string} password
+ */
+async function seedAdminUser(targetDir, password) {
+  const packageManager = await detectPackageManager();
+  
+  // Hashujeme heslo s výchozím saltem (stejným jako používá AuthService)
+  const passwordSalt = 'salt-change-in-production';
+  const passwordHash = await hashPassword(password, passwordSalt);
+  
+  const adminEmail = 'admin@patro.io';
+  const userId = crypto.randomUUID();
+  const now = Date.now();
+  
+  // Vytvoříme SQL příkaz pro vložení admina
+  const sql = `
+    INSERT INTO users (id, email, username, first_name, last_name, password_hash, role, language, is_active, created_at, updated_at)
+    VALUES ('${userId}', '${adminEmail}', 'admin', 'Admin', 'User', '${passwordHash}', 'admin', NULL, 1, ${now}, ${now});
+  `;
+  
+  // Spustíme SQL přímo přes wrangler d1 execute
+  try {
+    // Přečteme wrangler.jsonc pro získání database_name
+    const wranglerPath = path.join(targetDir, 'wrangler.jsonc');
+    const wranglerContent = await fs.readFile(wranglerPath, 'utf-8');
+    const dbNameMatch = wranglerContent.match(/"database_name"\s*:\s*"([^"]+)"/);
+    
+    if (!dbNameMatch) {
+      throw new Error('Could not find database_name in wrangler.jsonc');
+    }
+    
+    const databaseName = dbNameMatch[1];
+    
+    await execa('wrangler', [
+      'd1',
+      'execute',
+      databaseName,
+      '--local',
+      '--command',
+      sql
+    ], {
+      cwd: targetDir,
+      stdio: 'ignore'
+    });
+  } catch (error) {
+    throw new Error(`Failed to seed admin user: ${error.message}`);
+  }
+}
 
 function printSuccessMessage(answers) {
   const {
@@ -658,7 +759,8 @@ function printSuccessMessage(answers) {
     resourcesCreated,
     databaseIdSet,
     migrationsRan,
-    adminSeeded, // Will be removed
+    adminSeeded,
+    adminPassword,
   } = answers;
 
   console.log();
@@ -704,23 +806,33 @@ function printSuccessMessage(answers) {
   }
 
   console.log();
-  if (migrationsRan) {
+  if (migrationsRan && adminSeeded) {
     console.log(kleur.bold().green("✓ Database is ready! Start development:"));
+  } else if (migrationsRan) {
+    console.log(kleur.bold().yellow("⚠ Database ready, but admin user not created"));
   } else {
     console.log(kleur.bold("Start development:"));
   }
   console.log(kleur.cyan("pnpm run dev"));
 
-  if (migrationsRan) {
+  // Zobrazit admin credentials pokud byly vytvořeny
+  if (adminSeeded && adminPassword) {
     console.log();
-    console.log(
-      kleur.green("✓ Everything is set up! Just run pnpm dev and create your first user.")
-    );
+    console.log(kleur.bold().green("✓ Admin user credentials:"));
+    console.log(kleur.cyan("  Email:    admin@patro.io"));
+    console.log(kleur.cyan(`  Password: ${adminPassword}`));
+    console.log();
+    console.log(kleur.yellow("⚠ IMPORTANT: Save these credentials! Password won't be shown again."));
+    console.log(kleur.dim("  You can change the password after first login in admin settings."));
+  } else if (migrationsRan && !adminSeeded) {
+    console.log();
+    console.log(kleur.bold("Create your first admin user:"));
+    console.log(kleur.cyan("  Visit: http://localhost:8787/auth/register"));
+  } else if (!migrationsRan) {
+    console.log();
+    console.log(kleur.bold("After migrations, visit to create first user:"));
+    console.log(kleur.cyan("  http://localhost:8787/auth/register"));
   }
-
-  console.log();
-  console.log(kleur.bold("Visit to create first user:"));
-  console.log(kleur.cyan("http://localhost:8787/auth/register"));
 
   console.log();
   console.log(kleur.dim("Need help? Visit https://docs.patro.io"));

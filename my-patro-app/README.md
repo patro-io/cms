@@ -48,17 +48,32 @@ A modern, enterprise-grade headless CMS built with [PatroCMS](https://github.com
     pnpm db:migrate:local
     ```
 
-5.  **Start the development server:**
+5.  **Create admin user (optional - auto-created if using `pnpm create @patro-io/cms`):**
+    ```bash
+    pnpm run seed
+    ```
+    
+    This will create an admin user with:
+    - Email: `admin@patro.io`
+    - Password: Randomly generated (displayed in console)
+    
+    ⚠️ **IMPORTANT**: Save the password shown! It won't be displayed again.
+    
+    To set custom credentials:
+    ```bash
+    ADMIN_EMAIL=your@email.com ADMIN_PASSWORD=YourSecurePass123! pnpm run seed
+    ```
+
+6.  **Start the development server:**
     ```bash
     pnpm dev
     ```
 
-6.  **Open your browser:**
+7.  **Open your browser:**
     Navigate to `http://localhost:8787/admin` to access the admin interface.
-
-    **Default credentials:**
-    - Email: `admin@patro.io`
-    - Password: `admin`
+    
+    If you created the project with `pnpm create @patro-io/cms`, the admin credentials
+    were displayed at the end of installation. Otherwise, use credentials from step 5.
 
 ## Project Structure
 
@@ -79,6 +94,7 @@ my-patro-app/
 - `pnpm deploy` - Deploy to Cloudflare
 - `pnpm db:migrate` - Run migrations on production database
 - `pnpm db:migrate:local` - Run migrations locally
+- `pnpm run seed` - Create admin user with random password
 - `pnpm type-check` - Check TypeScript types
 - `pnpm test` - Run tests
 
