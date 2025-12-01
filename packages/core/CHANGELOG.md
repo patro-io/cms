@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-beta.13
+
+### Patch Changes
+
+- - Added polling for AI translation
+  - Improved translation UX
+  - Shows progress notifications
+  - Handles translation timeout
+
 ## 0.1.0-beta.12
 
 ### Patch Changes
