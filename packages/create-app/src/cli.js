@@ -150,40 +150,7 @@ async function getProjectDetails(initialName) {
     });
   }
 
-  // Seed admin user
-  if (!flags.adminEmail || !flags.adminPassword) {
-    questions.push({
-      type: "confirm",
-      name: "seedAdmin",
-      message: "Create admin user?",
-      initial: true,
-    });
-
-    // Admin email (only if seeding)
-    questions.push({
-      type: (prev, values) => (values.seedAdmin ? "text" : null),
-      name: "adminEmail",
-      message: "Admin email:",
-      validate: (value) => {
-        if (!value) return "Admin email is required";
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) return "Please enter a valid email address";
-        return true;
-      },
-    });
-
-    // Admin password (only if seeding)
-    questions.push({
-      type: (prev, values) => (values.seedAdmin ? "password" : null),
-      name: "adminPassword",
-      message: "Admin password:",
-      validate: (value) => {
-        if (!value) return "Admin password is required";
-        if (value.length < 8) return "Password must be at least 8 characters";
-        return true;
-      },
-    });
-  }
+  // Seed admin user - REMOVED
 
   // Include example collection
   if (!flags.skipExample && !flags.includeExample) {
@@ -241,9 +208,8 @@ async function getProjectDetails(initialName) {
       flags.bucketName ||
       answers.bucketName ||
       `${initialName || answers.projectName}-media`,
-    seedAdmin: flags.adminEmail && flags.adminPassword ? true : (answers.seedAdmin !== undefined ? answers.seedAdmin : true),
-    adminEmail: flags.adminEmail || answers.adminEmail,
-    adminPassword: flags.adminPassword || answers.adminPassword,
+    adminEmail: null,
+    adminPassword: null,
     includeExample: flags.skipExample
       ? false
       : flags.includeExample
@@ -270,7 +236,6 @@ async function createProject(answers, flags) {
     includeExample,
     createResources,
     runMigrations,
-    seedAdmin,
     initGit,
     skipInstall,
   } = answers;
@@ -287,7 +252,6 @@ async function createProject(answers, flags) {
       projectName,
       databaseName,
       bucketName,
-      seedAdmin,
       adminEmail,
       adminPassword,
       includeExample,
@@ -374,26 +338,7 @@ async function createProject(answers, flags) {
       answers.migrationsRan = false;
     }
 
-    // 7. Seed admin user
-    if (seedAdmin && !skipInstall && answers.migrationsRan) {
-      spinner.start("Seeding admin user...");
-      try {
-        await seedAdminUser(targetDir, {
-          email: adminEmail,
-          password: adminPassword,
-        });
-        spinner.succeed("Admin user created");
-        answers.adminSeeded = true;
-      } catch (error) {
-        spinner.warn("Failed to seed admin user");
-        console.log(kleur.dim(`${error.message}`));
-        console.log(kleur.dim("You can run it manually with: pnpm seed"));
-        answers.adminSeeded = false;
-      }
-    } else if (seedAdmin && !answers.migrationsRan) {
-      spinner.info("Skipping seed - migrations not completed");
-      answers.adminSeeded = false;
-    }
+    // 7. Seed admin user - REMOVED
 
     spinner.succeed(kleur.bold().green("✓ Project created successfully!"));
   } catch (error) {
@@ -464,171 +409,7 @@ async function copyTemplate(templateName, targetDir, options) {
     await fs.writeFile(indexTsPath, indexContent);
   }
 
-  // Create admin seed script
-  if (options.seedAdmin && options.adminEmail && options.adminPassword) {
-    await createAdminSeedScript(targetDir, {
-      email: options.adminEmail,
-      password: options.adminPassword,
-    });
-  }
-}
-
-async function createAdminSeedScript(targetDir, { email, password }) {
-  const seedScriptContent = `
-import { Effect, Layer } from 'effect'
-import {
-  users,
-  DatabaseService,
-  AuthService,
-  AuthServiceLive,
-  makeDatabaseLayer,
-  makeAppConfigLayer,
-} from '@patro-io/cms'
-import { getPlatformProxy } from 'wrangler'
-import { eq } from 'drizzle-orm'
-
-// Define environment interface based on bindings
-interface Env {
-  DB: D1Database
-  [key: string]: unknown
-}
-
-// Main program using Effect
-const program = Effect.gen(function* (_) {
-  const adminEmail = process.env.ADMIN_EMAIL
-  const adminPassword = process.env.ADMIN_PASSWORD
-
-  if (!adminEmail || !adminPassword) {
-    return yield* Effect.fail(new Error('Admin email and password are required.'))
-  }
-
-  const dbService = yield* DatabaseService
-  const authService = yield* AuthService
-
-  // Check if admin user already exists
-  const existingUser = yield* dbService.queryFirst(
-    'SELECT id, email, role FROM users WHERE email = ?',
-    [adminEmail]
-  )
-
-  if (existingUser) {
-    yield* Effect.logInfo('✓ Admin user already exists')
-    yield* Effect.logInfo(\`  Email: \${adminEmail}\`)
-    yield* Effect.logInfo(\`  Role: \${existingUser.role}\`)
-    return
-  }
-
-  // Hash password using AuthService to ensure consistency
-  const passwordHash = yield* authService.hashPassword(adminPassword)
-
-  // Create admin user
-  const newUser = {
-    id: crypto.randomUUID(),
-    email: adminEmail,
-    username: adminEmail.split('@')[0],
-    firstName: 'Admin',
-    lastName: 'User',
-    passwordHash: passwordHash,
-    role: 'admin',
-    isActive: true,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  }
-
-  yield* dbService.execute(
-    'INSERT INTO users (id, email, username, first_name, last_name, password_hash, role, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [
-      newUser.id,
-      newUser.email,
-      newUser.username,
-      newUser.firstName,
-      newUser.lastName,
-      newUser.passwordHash,
-      newUser.role,
-      newUser.isActive ? 1 : 0,
-      newUser.createdAt,
-      newUser.updatedAt,
-    ]
-  )
-
-  yield* Effect.logInfo('✓ Admin user created successfully')
-  yield* Effect.logInfo(\`  Email: \${adminEmail}\`)
-  yield* Effect.logInfo('  Role: admin')
-  yield* Effect.logInfo('')
-  yield* Effect.logInfo('You can now login at: http://localhost:8787/auth/login')
-})
-
-// Function to run the Effect program
-async function runSeed() {
-  let platform: Awaited<ReturnType<typeof getPlatformProxy<Env>>> | undefined
-
-  try {
-    // 1. Get Cloudflare platform proxy
-    platform = await getPlatformProxy<Env>({
-      // You might need to specify the path to wrangler.toml if it's not in the root
-      // configPath: './wrangler.jsonc'
-    })
-
-    if (!platform.env?.DB) {
-      console.error('❌ Error: D1 database binding (DB) not found.')
-      console.error('Please check your wrangler.jsonc configuration.')
-      process.exit(1)
-    }
-
-    // 2. Create layers for dependency injection
-    const configLayer = makeAppConfigLayer(platform.env)
-    const dbLayer = makeDatabaseLayer(platform.env.DB)
-    const authLayer = AuthServiceLive
-
-    // 3. Construct the final layer
-    const appLayer = Layer.mergeAll(dbLayer, authLayer).pipe(
-      Layer.provide(configLayer)
-    )
-
-    // 4. Run the program with provided layers
-    await Effect.runPromise(program.pipe(Effect.provide(appLayer)))
-  } catch (error) {
-    console.error('❌ Seeding failed:', error)
-    process.exit(1)
-  } finally {
-    // 5. Dispose of the platform proxy
-    if (platform) {
-      await platform.dispose()
-    }
-  }
-}
-
-// Execute the seed script
-runSeed()
-  .then(() => {
-    console.log('')
-    console.log('✓ Seeding complete')
-    process.exit(0)
-  })
-  .catch((error) => {
-    // This catch is for any unhandled promise rejections in runSeed itself
-    console.error('❌ An unexpected error occurred in runSeed:', error)
-    process.exit(1)
-  })
-`;
-
-  const scriptsDir = path.join(targetDir, "scripts");
-  await fs.ensureDir(scriptsDir);
-
-  const seedScriptPath = path.join(scriptsDir, "seed-admin.ts");
-  await fs.writeFile(seedScriptPath, seedScriptContent);
-
-  // Add seed script to package.json
-  const packageJsonPath = path.join(targetDir, "package.json");
-  const packageJson = await fs.readJson(packageJsonPath);
-
-  if (!packageJson.scripts) {
-    packageJson.scripts = {};
-  }
-
-  packageJson.scripts.seed = "tsx scripts/seed-admin.ts";
-
-  await fs.writeJson(packageJsonPath, packageJson, { spaces: 2 });
+  // Create admin seed script - REMOVED
 }
 
 async function copyMigrationsFromCore(targetDir) {
@@ -779,6 +560,18 @@ async function updateWranglerConfig(
   );
 
   await fs.writeFile(wranglerPath, content);
+
+  // Add dev config to ensure persistent local storage
+  try {
+    const wranglerJson = await fs.readJson(wranglerPath);
+    wranglerJson.dev = {
+      ...wranglerJson.dev,
+      persist_to: ".wrangler/dev-storage",
+    };
+    await fs.writeJson(wranglerPath, wranglerJson, { spaces: 4 });
+  } catch (error) {
+    // Silently fail if JSON is invalid, as it's a non-critical enhancement
+  }
 }
 
 async function installDependencies(targetDir) {
@@ -855,44 +648,7 @@ async function runDatabaseMigrations(targetDir) {
   }
 }
 
-async function seedAdminUser(targetDir, options) {
-  const packageManager = await detectPackageManager();
-  const runCmd =
-    packageManager === "npm" ? "run" : packageManager === "yarn" ? "" : "run";
-
-  try {
-    const { stdout, stderr } = await execa(
-      packageManager,
-      [runCmd, "seed"].filter(Boolean),
-      {
-        cwd: targetDir,
-        reject: false,
-        stdio: ["ignore", "pipe", "pipe"],
-        env: {
-          ADMIN_EMAIL: options.email,
-          ADMIN_PASSWORD: options.password,
-        },
-      }
-    );
-
-    if (
-      stderr &&
-      (stderr.toLowerCase().includes("error:") ||
-        stderr.toLowerCase().includes("failed"))
-    ) {
-      if (
-        !stdout.includes("Admin user created") &&
-        !stdout.includes("Admin user already exists")
-      ) {
-        throw new Error(stderr);
-      }
-    }
-
-    return stdout;
-  } catch (error) {
-    throw new Error(`Seeding failed: ${error.message}`);
-  }
-}
+// seedAdminUser function REMOVED
 
 function printSuccessMessage(answers) {
   const {
@@ -902,8 +658,7 @@ function printSuccessMessage(answers) {
     resourcesCreated,
     databaseIdSet,
     migrationsRan,
-    adminSeeded,
-    seedAdmin,
+    adminSeeded, // Will be removed
   } = answers;
 
   console.log();
@@ -935,7 +690,7 @@ function printSuccessMessage(answers) {
 
   // Show migration/seed steps if needed
   const needsMigrations = !migrationsRan;
-  const needsSeeding = seedAdmin && !adminSeeded;
+  const needsSeeding = false; // Always false now
 
   if (needsMigrations || needsSeeding) {
     console.log();
@@ -949,30 +704,23 @@ function printSuccessMessage(answers) {
   }
 
   console.log();
-  if (migrationsRan && (!seedAdmin || adminSeeded)) {
+  if (migrationsRan) {
     console.log(kleur.bold().green("✓ Database is ready! Start development:"));
   } else {
     console.log(kleur.bold("Start development:"));
   }
   console.log(kleur.cyan("pnpm run dev"));
 
-  if (seedAdmin && answers.adminEmail) {
-    console.log();
-    console.log(kleur.bold("Login credentials:"));
-    console.log(kleur.cyan(`Email: ${answers.adminEmail}`));
-    console.log(kleur.dim(`Password: [as entered]`));
-  }
-
-  if (migrationsRan && (!seedAdmin || adminSeeded)) {
+  if (migrationsRan) {
     console.log();
     console.log(
-      kleur.green("✓ Everything is set up! Just run pnpm dev and login.")
+      kleur.green("✓ Everything is set up! Just run pnpm dev and create your first user.")
     );
   }
 
   console.log();
-  console.log(kleur.bold("Visit:"));
-  console.log(kleur.cyan("http://localhost:8787/admin"));
+  console.log(kleur.bold("Visit to create first user:"));
+  console.log(kleur.cyan("http://localhost:8787/auth/register"));
 
   console.log();
   console.log(kleur.dim("Need help? Visit https://docs.patro.io"));

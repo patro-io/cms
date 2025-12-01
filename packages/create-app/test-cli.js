@@ -55,7 +55,6 @@ async function runTest() {
       'tsconfig.json',
       'src/index.ts',
       'src/collections/blog-posts.collection.ts',
-      'scripts/seed-admin.ts',
       'README.md',
     ];
 
@@ -92,9 +91,7 @@ async function runTest() {
     if (!wranglerContent.includes('"bucket_name": "test-media"'))
         throw new Error('Wrangler config missing bucket name');
 
-    console.log('\n🌱 Verifying seed script content...');
-    const seedScriptContent = await fs.readFile(path.join(testDir, 'scripts/seed-admin.ts'), 'utf-8');
-    console.log(`   Imports Effect: ${seedScriptContent.includes("from 'effect'")}`);
+    // Seed script verification removed
     if (!seedScriptContent.includes("from 'effect'"))
         throw new Error('Seed script does not import Effect');
     

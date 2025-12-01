@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "update": "pnpm install @patro-io/cms@latest --save",
     "update:beta": "pnpm install @patro-io/cms@beta --save",
-    "seed": "tsx scripts/seed-admin.ts"
+    "seed": "echo \"Seeding has been removed. Create users via /auth/register.\""
   },
   "dependencies": {
     "@patro-io/cms": "workspace:*",
