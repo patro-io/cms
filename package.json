@@ -7,18 +7,23 @@
     "packages/*",
     "my-patro-app"
   ],
-  "scripts": {
-    "dev": "pnpm --filter my-patro-app dev",
+"scripts": {
+    "// LOCAL DEVELOPMENT (Uses my-patro-app/wrangler.dev.jsonc)": "--------------------------------------------------",
+    "dev": "pnpm --filter my-patro-app exec wrangler dev -c wrangler.dev.jsonc 2>&1 | grep -v '\\[wrangler:inf\\]'",
+    "start": "fuser -k 8787/tcp || true && pnpm build:core && pnpm run dev",
+    "clean:start": "fuser -k 8787/tcp || true && pnpm clean && pnpm install && pnpm build:core && pnpm run db:migrate:local && pnpm run dev",
+    "db:migrate:local": "pnpm --filter my-patro-app exec wrangler d1 migrations apply DB --local -c wrangler.dev.jsonc",
+    "seed": "pnpm --filter my-patro-app run seed",
+    
+    "// BUILD & DEPLOY (Uses ROOT wrangler.jsonc - for Cloudflare Button)": "---------------------------------------",
     "build": "pnpm run build:core && pnpm --filter my-patro-app build",
     "build:core": "pnpm --filter @patro-io/cms build",
-    "db:migrate:local": "pnpm --filter my-patro-app run db:migrate:local",
-    "clean:db": "tsx scripts/db-clear.ts",
-    "seed": "pnpm --filter my-patro-app run seed",
-    "clean": "rm -rf node_modules .wrangler dist coverage .dev.vars packages/*/node_modules packages/*/dist packages/*/.wrangler my-patro-app/node_modules my-patro-app/.wrangler",
-    "clean:start": "fuser -k 8787/tcp || true &&pnpm clean && pnpm install && pnpm build:core && pnpm db:migrate:local && pnpm dev",
-    "start": "fuser -k 8787/tcp || true &&pnpm build:core && pnpm dev",
     "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
-    "clean:deploy": "fuser -k 8787/tcp || true && tsx scripts/db-clear.ts && pnpm --filter my-patro-app run deploy",
+    "clean:deploy": "fuser -k 8787/tcp || true && tsx scripts/db-clear.ts && pnpm run deploy",
+    
+    "// OTHER TOOLS": "-----------------------------------------------------------------------------------------",
+    "clean": "rm -rf node_modules .wrangler dist coverage .dev.vars packages/*/node_modules packages/*/dist packages/*/.wrangler my-patro-app/node_modules my-patro-app/.wrangler",
+    "clean:db": "tsx scripts/db-clear.ts",
     "log": "npx wrangler tail patrocms",
     "test": "pnpm --filter @patro-io/cms test",
     "test:cov": "pnpm --filter @patro-io/cms test:cov",
