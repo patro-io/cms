@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0-beta.14
+
+### Patch Changes
+
+- - Simplified AI translation redirect
+  - Show message and redirect after 5 seconds
+
 ## 0.1.0-beta.13
 
 ### Patch Changes
