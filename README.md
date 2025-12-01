@@ -5,7 +5,7 @@
 [![License: FSL-1.1-MIT](https://img.shields.io/badge/License-FSL--1.1--MIT-yellow.svg)](LICENSE)
 [![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/patro-io/cms)
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/patro-io/cms/tree/main/my-patro-app)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/patro-io/cms)
 
 **The First 100% Pure Effect Headless CMS for Cloudflare Workers.**
 
@@ -104,7 +104,7 @@ To contribute to the PatroCMS core package (this repository):
 
 Deploy a starter instance of PatroCMS directly to your Cloudflare account:
 
-[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/patro-io/cms/tree/main/my-patro-app)
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/patro-io/cms)
 
 **Prerequisites:**
 - **Cloudflare Account**: You need an active Cloudflare account.
