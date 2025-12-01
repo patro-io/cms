@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.2
+
+### Patch Changes
+
+- feat: Refactor environment variable handling to use Effect.Config for improved type-safety and validation.
+
 ## 0.1.0-beta.1
 
 ### Minor Changes
