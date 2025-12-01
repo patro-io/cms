@@ -6,8 +6,10 @@
     "packages/*",
     "my-patro-app"
   ],
+  "packageManager": "pnpm@10.24.0",
   "scripts": {
     "dev": "pnpm --filter my-patro-app dev",
+    "build": "pnpm run build:core && pnpm --filter my-patro-app build",
     "build:core": "pnpm --filter @patro-io/cms build",
     "db:migrate:local": "pnpm --filter my-patro-app run db:migrate:local",
     "clean:db": "tsx scripts/db-clear.ts",
