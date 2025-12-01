@@ -1,5 +1,7 @@
 import { createDb, users } from '@patro-io/cms'
 import { eq } from 'drizzle-orm'
+import { getPlatformProxy } from 'wrangler'
+import type { D1Database } from '@cloudflare/workers-types'
 
 /**
  * Seed script to create initial admin user
@@ -8,9 +10,7 @@ import { eq } from 'drizzle-orm'
  * pnpm db:migrate:local
  * pnpm seed
  *
- * Admin credentials:
- * Email: admin@patro.io
- * Password: patro!
+ * Admin credentials will be read from environment or use defaults below
  */
 
 interface Env {
@@ -30,13 +30,25 @@ async function hashPassword(password: string, salt: string): Promise<string> {
 }
 
 async function seed() {
+  // Get credentials from environment or use setup values
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@patro.io'
+  const adminPassword = process.env.ADMIN_PASSWORD || 'patro!'
+  
   // Get password salt from environment or use default (must match AuthService)
   const passwordSalt = process.env.PASSWORD_SALT || 'salt-change-in-production'
+
+  // Get D1 database from Cloudflare environment using wrangler
+  let platform: Awaited<ReturnType<typeof getPlatformProxy<Env>>>
   
-  // Get D1 database from Cloudflare environment
-  // @ts-ignore - getPlatformProxy is available in wrangler
-  const { env } = await import('@cloudflare/workers-types/experimental')
-  const platform = (env as any).getPlatformProxy?.() || { env: {} }
+  try {
+    platform = await getPlatformProxy<Env>()
+  } catch (error) {
+    console.error('❌ Error: Failed to get platform proxy')
+    console.error('Make sure you are running this with tsx/node and wrangler is installed')
+    console.error('')
+    console.error(error)
+    process.exit(1)
+  }
 
   if (!platform.env?.DB) {
     console.error('❌ Error: DB binding not found')
@@ -46,6 +58,9 @@ async function seed() {
     console.error('2. Updated wrangler.jsonc with the database_id')
     console.error('3. Run migrations: pnpm db:migrate:local')
     console.error('')
+    
+    // Dispose platform proxy before exit
+    await platform.dispose()
     process.exit(1)
   }
 
@@ -56,26 +71,29 @@ async function seed() {
     const existingUser = await db
       .select()
       .from(users)
-      .where(eq(users.email, 'admin@patro.io'))
+      .where(eq(users.email, adminEmail))
       .get()
 
     if (existingUser) {
       console.log('✓ Admin user already exists')
-      console.log(`  Email: admin@patro.io`)
+      console.log(`  Email: ${adminEmail}`)
       console.log(`  Role: ${existingUser.role}`)
+      
+      // Dispose platform proxy before exit
+      await platform.dispose()
       return
     }
 
     // Hash password using SHA-256 (same as AuthService)
-    const passwordHash = await hashPassword('patro!', passwordSalt)
+    const passwordHash = await hashPassword(adminPassword, passwordSalt)
 
     // Create admin user
     await db
       .insert(users)
       .values({
         id: crypto.randomUUID(),
-        email: 'admin@patro.io',
-        username: 'admin',
+        email: adminEmail,
+        username: adminEmail.split('@')[0],
         firstName: 'Admin',
         lastName: 'User',
         passwordHash: passwordHash,
@@ -87,12 +105,18 @@ async function seed() {
       .run()
 
     console.log('✓ Admin user created successfully')
-    console.log(`  Email: admin@patro.io`)
+    console.log(`  Email: ${adminEmail}`)
     console.log(`  Role: admin`)
     console.log('')
     console.log('You can now login at: http://localhost:8787/auth/login')
+    
+    // Dispose platform proxy after successful seed
+    await platform.dispose()
   } catch (error) {
     console.error('❌ Error creating admin user:', error)
+    
+    // Dispose platform proxy on error
+    await platform.dispose()
     process.exit(1)
   }
 }

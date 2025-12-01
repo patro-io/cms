@@ -469,6 +469,8 @@ async function copyTemplate(templateName, targetDir, options) {
 async function createAdminSeedScript(targetDir, { email, password }) {
   const seedScriptContent = `import { createDb, users } from '@patro-io/cms'
 import { eq } from 'drizzle-orm'
+import { getPlatformProxy } from 'wrangler'
+import type { D1Database } from '@cloudflare/workers-types'
 
 /**
  * Seed script to create initial admin user
@@ -504,10 +506,18 @@ async function seed() {
   // Get password salt from environment or use default (must match AuthService)
   const passwordSalt = process.env.PASSWORD_SALT || 'salt-change-in-production'
 
-  // Get D1 database from Cloudflare environment
-  // @ts-ignore - getPlatformProxy is available in wrangler
-  const { env } = await import('@cloudflare/workers-types/experimental')
-  const platform = (env as any).getPlatformProxy?.() || { env: {} }
+  // Get D1 database from Cloudflare environment using wrangler
+  let platform: Awaited<ReturnType<typeof getPlatformProxy<Env>>>
+  
+  try {
+    platform = await getPlatformProxy<Env>()
+  } catch (error) {
+    console.error('❌ Error: Failed to get platform proxy')
+    console.error('Make sure you are running this with tsx/node and wrangler is installed')
+    console.error('')
+    console.error(error)
+    process.exit(1)
+  }
 
   if (!platform.env?.DB) {
     console.error('❌ Error: DB binding not found')
@@ -517,6 +527,9 @@ async function seed() {
     console.error('2. Updated wrangler.jsonc with the database_id')
     console.error('3. Run migrations: pnpm db:migrate:local')
     console.error('')
+    
+    // Dispose platform proxy before exit
+    await platform.dispose()
     process.exit(1)
   }
 
@@ -532,8 +545,11 @@ async function seed() {
 
     if (existingUser) {
       console.log('✓ Admin user already exists')
-      console.log(\`Email: \${adminEmail}\`)
-      console.log(\`Role: \${existingUser.role}\`)
+      console.log(\`  Email: \${adminEmail}\`)
+      console.log(\`  Role: \${existingUser.role}\`)
+      
+      // Dispose platform proxy before exit
+      await platform.dispose()
       return
     }
 
@@ -558,12 +574,18 @@ async function seed() {
       .run()
 
     console.log('✓ Admin user created successfully')
-    console.log(\`Email: \${adminEmail}\`)
-    console.log(\`Role: admin\`)
+    console.log(\`  Email: \${adminEmail}\`)
+    console.log(\`  Role: admin\`)
     console.log('')
     console.log('You can now login at: http://localhost:8787/auth/login')
+    
+    // Dispose platform proxy after successful seed
+    await platform.dispose()
   } catch (error) {
     console.error('❌ Error creating admin user:', error)
+    
+    // Dispose platform proxy on error
+    await platform.dispose()
     process.exit(1)
   }
 }

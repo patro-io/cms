@@ -3,49 +3,49 @@
   "version": "0.1.0-beta.5",
   "description": "Core framework for Patro: An Edge-first Headless CMS built with Effect TS for Cloudflare Workers",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.cjs"
     },
     "./services": {
-      "types": "./dist/services.d.ts",
-      "import": "./dist/services.js",
-      "require": "./dist/services.cjs"
+      "types": "./dist/types/services.d.ts",
+      "import": "./dist/esm/services.js",
+      "require": "./dist/cjs/services.cjs"
     },
     "./middleware": {
-      "types": "./dist/middleware.d.ts",
-      "import": "./dist/middleware.js",
-      "require": "./dist/middleware.cjs"
+      "types": "./dist/types/middleware.d.ts",
+      "import": "./dist/esm/middleware.js",
+      "require": "./dist/cjs/middleware.cjs"
     },
     "./routes": {
-      "types": "./dist/routes.d.ts",
-      "import": "./dist/routes.js",
-      "require": "./dist/routes.cjs"
+      "types": "./dist/types/routes.d.ts",
+      "import": "./dist/esm/routes.js",
+      "require": "./dist/cjs/routes.cjs"
     },
     "./templates": {
-      "types": "./dist/templates.d.ts",
-      "import": "./dist/templates.js",
-      "require": "./dist/templates.cjs"
+      "types": "./dist/types/templates.d.ts",
+      "import": "./dist/esm/templates.js",
+      "require": "./dist/cjs/templates.cjs"
     },
     "./plugins": {
-      "types": "./dist/plugins.d.ts",
-      "import": "./dist/plugins.js",
-      "require": "./dist/plugins.cjs"
+      "types": "./dist/types/plugins.d.ts",
+      "import": "./dist/esm/plugins.js",
+      "require": "./dist/cjs/plugins.cjs"
     },
     "./utils": {
-      "types": "./dist/utils.d.ts",
-      "import": "./dist/utils.js",
-      "require": "./dist/utils.cjs"
+      "types": "./dist/types/utils.d.ts",
+      "import": "./dist/esm/utils.js",
+      "require": "./dist/cjs/utils.cjs"
     },
     "./types": {
-      "types": "./dist/types.d.ts",
-      "import": "./dist/types.js",
-      "require": "./dist/types.cjs"
+      "types": "./dist/types/types.d.ts",
+      "import": "./dist/esm/types.js",
+      "require": "./dist/cjs/types.cjs"
     },
     "./package.json": "./package.json"
   },
