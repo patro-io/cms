@@ -1,5 +1,13 @@
 # @patro-io/create-cms
 
+## 0.1.0-beta.10
+
+### Patch Changes
+
+- - Random password generation
+  - Improved security for demo login
+  - Updated documentation
+
 ## 0.1.0-beta.9
 
 ### Patch Changes
