@@ -701,51 +701,33 @@ async function runDatabaseMigrations(targetDir) {
 }
 
 /**
- * Seeduje admin uživatele do databáze
+ * Seeduje admin uživatele do databáze pomocí seed scriptu
  * @param {string} targetDir
  * @param {string} password
  */
 async function seedAdminUser(targetDir, password) {
   const packageManager = await detectPackageManager();
+  const runCmd = packageManager === 'npm' ? 'run' : packageManager === 'yarn' ? '' : 'run';
   
-  // Hashujeme heslo s výchozím saltem (stejným jako používá AuthService)
-  const passwordSalt = 'salt-change-in-production';
-  const passwordHash = await hashPassword(password, passwordSalt);
+  // Nastavíme heslo přes environment variable pro seed script
+  const env = {
+    ...process.env,
+    ADMIN_EMAIL: 'admin@patro.io',
+    ADMIN_PASSWORD: password
+  };
   
-  const adminEmail = 'admin@patro.io';
-  const userId = crypto.randomUUID();
-  const now = Date.now();
-  
-  // Vytvoříme SQL příkaz pro vložení admina
-  const sql = `
-    INSERT INTO users (id, email, username, first_name, last_name, password_hash, role, language, is_active, created_at, updated_at)
-    VALUES ('${userId}', '${adminEmail}', 'admin', 'Admin', 'User', '${passwordHash}', 'admin', NULL, 1, ${now}, ${now});
-  `;
-  
-  // Spustíme SQL přímo přes wrangler d1 execute
+  // Spustíme existující seed script
   try {
-    // Přečteme wrangler.jsonc pro získání database_name
-    const wranglerPath = path.join(targetDir, 'wrangler.jsonc');
-    const wranglerContent = await fs.readFile(wranglerPath, 'utf-8');
-    const dbNameMatch = wranglerContent.match(/"database_name"\s*:\s*"([^"]+)"/);
-    
-    if (!dbNameMatch) {
-      throw new Error('Could not find database_name in wrangler.jsonc');
-    }
-    
-    const databaseName = dbNameMatch[1];
-    
-    await execa('wrangler', [
-      'd1',
-      'execute',
-      databaseName,
-      '--local',
-      '--command',
-      sql
-    ], {
-      cwd: targetDir,
-      stdio: 'ignore'
-    });
+    await execa(
+      packageManager,
+      [runCmd, 'seed'].filter(Boolean),
+      {
+        cwd: targetDir,
+        env,
+        stdio: 'pipe', // Zachytíme output aby se nezobrazovalo heslo dvakrát
+        reject: false
+      }
+    );
   } catch (error) {
     throw new Error(`Failed to seed admin user: ${error.message}`);
   }
