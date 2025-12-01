@@ -45,6 +45,8 @@ const flags = {
   bucketName: args.find((arg) => arg.startsWith("--bucket="))?.split("=")[1],
   skipExample: args.includes("--skip-example"),
   includeExample: args.includes("--include-example"),
+  adminEmail: args.find((arg) => arg.startsWith("--adminEmail="))?.split("=")[1],
+  adminPassword: args.find((arg) => arg.startsWith("--adminPassword="))?.split("=")[1],
 };
 
 async function main() {
@@ -149,37 +151,39 @@ async function getProjectDetails(initialName) {
   }
 
   // Seed admin user
-  questions.push({
-    type: "confirm",
-    name: "seedAdmin",
-    message: "Create admin user?",
-    initial: true,
-  });
+  if (!flags.adminEmail || !flags.adminPassword) {
+    questions.push({
+      type: "confirm",
+      name: "seedAdmin",
+      message: "Create admin user?",
+      initial: true,
+    });
 
-  // Admin email (only if seeding)
-  questions.push({
-    type: (prev, values) => (values.seedAdmin ? "text" : null),
-    name: "adminEmail",
-    message: "Admin email:",
-    validate: (value) => {
-      if (!value) return "Admin email is required";
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) return "Please enter a valid email address";
-      return true;
-    },
-  });
+    // Admin email (only if seeding)
+    questions.push({
+      type: (prev, values) => (values.seedAdmin ? "text" : null),
+      name: "adminEmail",
+      message: "Admin email:",
+      validate: (value) => {
+        if (!value) return "Admin email is required";
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(value)) return "Please enter a valid email address";
+        return true;
+      },
+    });
 
-  // Admin password (only if seeding)
-  questions.push({
-    type: (prev, values) => (values.seedAdmin ? "password" : null),
-    name: "adminPassword",
-    message: "Admin password:",
-    validate: (value) => {
-      if (!value) return "Admin password is required";
-      if (value.length < 8) return "Password must be at least 8 characters";
-      return true;
-    },
-  });
+    // Admin password (only if seeding)
+    questions.push({
+      type: (prev, values) => (values.seedAdmin ? "password" : null),
+      name: "adminPassword",
+      message: "Admin password:",
+      validate: (value) => {
+        if (!value) return "Admin password is required";
+        if (value.length < 8) return "Password must be at least 8 characters";
+        return true;
+      },
+    });
+  }
 
   // Include example collection
   if (!flags.skipExample && !flags.includeExample) {
@@ -237,9 +241,9 @@ async function getProjectDetails(initialName) {
       flags.bucketName ||
       answers.bucketName ||
       `${initialName || answers.projectName}-media`,
-    seedAdmin: answers.seedAdmin !== undefined ? answers.seedAdmin : true,
-    adminEmail: answers.adminEmail,
-    adminPassword: answers.adminPassword,
+    seedAdmin: flags.adminEmail && flags.adminPassword ? true : (answers.seedAdmin !== undefined ? answers.seedAdmin : true),
+    adminEmail: flags.adminEmail || answers.adminEmail,
+    adminPassword: flags.adminPassword || answers.adminPassword,
     includeExample: flags.skipExample
       ? false
       : flags.includeExample
@@ -467,138 +471,140 @@ async function copyTemplate(templateName, targetDir, options) {
 }
 
 async function createAdminSeedScript(targetDir, { email, password }) {
-  const seedScriptContent = `import { createDb, users } from '@patro-io/cms'
-import { eq } from 'drizzle-orm'
+  const seedScriptContent = `
+import { Effect, Layer } from 'effect'
+import {
+  users,
+  DatabaseService,
+  AuthService,
+  AuthServiceLive,
+  makeDatabaseLayer,
+  makeAppConfigLayer,
+} from '@patro-io/cms'
 import { getPlatformProxy } from 'wrangler'
-import type { D1Database } from '@cloudflare/workers-types'
+import { eq } from 'drizzle-orm'
 
-/**
- * Seed script to create initial admin user
- *
- * Run this script after migrations:
- * pnpm db:migrate:local
- * pnpm seed
- *
- * Admin credentials will be read from environment or use defaults below
- */
-
+// Define environment interface based on bindings
 interface Env {
   DB: D1Database
+  [key: string]: unknown
 }
 
-/**
- * Hash password using the same SHA-256 method as AuthService
- * This ensures compatibility with the login system
- */
-async function hashPassword(password: string, salt: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(password + salt)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-async function seed() {
-  // Get credentials from environment or use setup values
+// Main program using Effect
+const program = Effect.gen(function* (_) {
   const adminEmail = process.env.ADMIN_EMAIL || '${email}'
   const adminPassword = process.env.ADMIN_PASSWORD || '${password}'
-  
-  // Get password salt from environment or use default (must match AuthService)
-  const passwordSalt = process.env.PASSWORD_SALT || 'salt-change-in-production'
 
-  // Get D1 database from Cloudflare environment using wrangler
-  let platform: Awaited<ReturnType<typeof getPlatformProxy<Env>>>
-  
-  try {
-    platform = await getPlatformProxy<Env>()
-  } catch (error) {
-    console.error('❌ Error: Failed to get platform proxy')
-    console.error('Make sure you are running this with tsx/node and wrangler is installed')
-    console.error('')
-    console.error(error)
-    process.exit(1)
+  if (!adminEmail || !adminPassword) {
+    return yield* Effect.fail(new Error('Admin email and password are required.'))
   }
 
-  if (!platform.env?.DB) {
-    console.error('❌ Error: DB binding not found')
-    console.error('')
-    console.error('Make sure you have:')
-    console.error('1. Created your D1 database: wrangler d1 create <database-name>')
-    console.error('2. Updated wrangler.jsonc with the database_id')
-    console.error('3. Run migrations: pnpm db:migrate:local')
-    console.error('')
-    
-    // Dispose platform proxy before exit
-    await platform.dispose()
-    process.exit(1)
+  const dbService = yield* DatabaseService
+  const authService = yield* AuthService
+
+  // Check if admin user already exists
+  const existingUser = yield* dbService.queryFirst(
+    'SELECT id, email, role FROM users WHERE email = ?',
+    [adminEmail]
+  )
+
+  if (existingUser) {
+    yield* Effect.logInfo('✓ Admin user already exists')
+    yield* Effect.logInfo(\`  Email: \${adminEmail}\`)
+    yield* Effect.logInfo(\`  Role: \${existingUser.role}\`)
+    return
   }
 
-  const db = createDb(platform.env.DB)
+  // Hash password using AuthService to ensure consistency
+  const passwordHash = yield* authService.hashPassword(adminPassword)
+
+  // Create admin user
+  const newUser = {
+    id: crypto.randomUUID(),
+    email: adminEmail,
+    username: adminEmail.split('@')[0],
+    firstName: 'Admin',
+    lastName: 'User',
+    passwordHash: passwordHash,
+    role: 'admin',
+    isActive: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+
+  yield* dbService.execute(
+    'INSERT INTO users (id, email, username, first_name, last_name, password_hash, role, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+      newUser.id,
+      newUser.email,
+      newUser.username,
+      newUser.firstName,
+      newUser.lastName,
+      newUser.passwordHash,
+      newUser.role,
+      newUser.isActive ? 1 : 0,
+      newUser.createdAt,
+      newUser.updatedAt,
+    ]
+  )
+
+  yield* Effect.logInfo('✓ Admin user created successfully')
+  yield* Effect.logInfo(\`  Email: \${adminEmail}\`)
+  yield* Effect.logInfo('  Role: admin')
+  yield* Effect.logInfo('')
+  yield* Effect.logInfo('You can now login at: http://localhost:8787/auth/login')
+})
+
+// Function to run the Effect program
+async function runSeed() {
+  let platform: Awaited<ReturnType<typeof getPlatformProxy<Env>>> | undefined
 
   try {
-    // Check if admin user already exists
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, adminEmail))
-      .get()
+    // 1. Get Cloudflare platform proxy
+    platform = await getPlatformProxy<Env>({
+      // You might need to specify the path to wrangler.toml if it's not in the root
+      // configPath: './wrangler.jsonc'
+    })
 
-    if (existingUser) {
-      console.log('✓ Admin user already exists')
-      console.log(\`  Email: \${adminEmail}\`)
-      console.log(\`  Role: \${existingUser.role}\`)
-      
-      // Dispose platform proxy before exit
-      await platform.dispose()
-      return
+    if (!platform.env?.DB) {
+      console.error('❌ Error: D1 database binding (DB) not found.')
+      console.error('Please check your wrangler.jsonc configuration.')
+      process.exit(1)
     }
 
-    // Hash password using SHA-256 (same as AuthService)
-    const passwordHash = await hashPassword(adminPassword, passwordSalt)
+    // 2. Create layers for dependency injection
+    const configLayer = makeAppConfigLayer(platform.env)
+    const dbLayer = makeDatabaseLayer(platform.env.DB)
+    const authLayer = AuthServiceLive
 
-    // Create admin user
-    await db
-      .insert(users)
-      .values({
-        id: crypto.randomUUID(),
-        email: adminEmail,
-        username: adminEmail.split('@')[0],
-        firstName: 'Admin',
-        lastName: 'User',
-        passwordHash: passwordHash,
-        role: 'admin',
-        isActive: true,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      })
-      .run()
+    // 3. Construct the final layer
+    const appLayer = Layer.mergeAll(dbLayer, authLayer).pipe(
+      Layer.provide(configLayer)
+    )
 
-    console.log('✓ Admin user created successfully')
-    console.log(\`  Email: \${adminEmail}\`)
-    console.log(\`  Role: admin\`)
-    console.log('')
-    console.log('You can now login at: http://localhost:8787/auth/login')
-    
-    // Dispose platform proxy after successful seed
-    await platform.dispose()
+    // 4. Run the program with provided layers
+    await Effect.runPromise(program.pipe(Effect.provide(appLayer)))
   } catch (error) {
-    console.error('❌ Error creating admin user:', error)
-    
-    // Dispose platform proxy on error
-    await platform.dispose()
+    console.error('❌ Seeding failed:', error)
     process.exit(1)
+  } finally {
+    // 5. Dispose of the platform proxy
+    if (platform) {
+      await platform.dispose()
+    }
   }
 }
 
-// Run seed
-seed()
+// Execute the seed script
+runSeed()
   .then(() => {
     console.log('')
     console.log('✓ Seeding complete')
     process.exit(0)
   })
   .catch((error) => {
-    console.error('❌ Seeding failed:', error)
+    // This catch is for any unhandled promise rejections in runSeed itself
+    console.error('❌ An unexpected error occurred in runSeed:', error)
     process.exit(1)
   })
 `;
