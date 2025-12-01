@@ -9,8 +9,10 @@
     "@patro-io/templates": "2.0.0"
   },
   "changesets": [
+    "blue-needles-peel",
     "bumpy-hoops-rule",
     "floppy-laws-find",
+    "full-bugs-eat",
     "honest-islands-begin",
     "many-flowers-unite",
     "old-cows-turn",

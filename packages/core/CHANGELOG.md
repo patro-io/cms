@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.0-beta.9
+
+### Patch Changes
+
+- - Removed admin seeding logic
+  - Streamlined project setup
+  - Simplified initial configuration
+
+## 0.1.0-beta.8
+
+### Patch Changes
+
+- - Removed admin seeding logic
+  - Streamlined project setup
+  - Simplified initial configuration
+
 ## 0.1.0-beta.7
 
 ### Patch Changes
