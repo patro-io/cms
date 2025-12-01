@@ -378,7 +378,10 @@ async function createProject(answers, flags) {
     if (seedAdmin && !skipInstall && answers.migrationsRan) {
       spinner.start("Seeding admin user...");
       try {
-        await seedAdminUser(targetDir);
+        await seedAdminUser(targetDir, {
+          email: adminEmail,
+          password: adminPassword,
+        });
         spinner.succeed("Admin user created");
         answers.adminSeeded = true;
       } catch (error) {
@@ -492,8 +495,8 @@ interface Env {
 
 // Main program using Effect
 const program = Effect.gen(function* (_) {
-  const adminEmail = process.env.ADMIN_EMAIL || '${email}'
-  const adminPassword = process.env.ADMIN_PASSWORD || '${password}'
+  const adminEmail = process.env.ADMIN_EMAIL
+  const adminPassword = process.env.ADMIN_PASSWORD
 
   if (!adminEmail || !adminPassword) {
     return yield* Effect.fail(new Error('Admin email and password are required.'))
@@ -852,7 +855,7 @@ async function runDatabaseMigrations(targetDir) {
   }
 }
 
-async function seedAdminUser(targetDir) {
+async function seedAdminUser(targetDir, options) {
   const packageManager = await detectPackageManager();
   const runCmd =
     packageManager === "npm" ? "run" : packageManager === "yarn" ? "" : "run";
@@ -864,7 +867,11 @@ async function seedAdminUser(targetDir) {
       {
         cwd: targetDir,
         reject: false,
-        stdio: ["ignore", "pipe", "pipe"], // ZMĚNA (už jsi možná měl)
+        stdio: ["ignore", "pipe", "pipe"],
+        env: {
+          ADMIN_EMAIL: options.email,
+          ADMIN_PASSWORD: options.password,
+        },
       }
     );
 

@@ -20,18 +20,18 @@
     "seed": "tsx scripts/seed-admin.ts"
   },
   "dependencies": {
-    "effect": "^3.19.4",
-    "@patro-io/cms": "workspace:*"
+    "@patro-io/cms": "workspace:*",
+    "effect": "^3.19.8"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250620.0",
-    "@types/node": "^20.19.1",
-    "drizzle-kit": "^0.30.0",
-    "drizzle-orm": "^0.44.2",
-    "hono": "^4.7.3",
-    "typescript": "^5.8.3",
-    "vitest": "^2.1.8",
-    "wrangler": "^4.45.4"
+    "@cloudflare/workers-types": "^4.20251128.0",
+    "@types/node": "^24.10.1",
+    "drizzle-kit": "^0.31.7",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.10.7",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14",
+    "wrangler": "^4.51.0"
   },
   "engines": {
     "node": ">=18.0.0"

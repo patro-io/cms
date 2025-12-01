@@ -92,19 +92,19 @@
     "hono": "^4.0.0"
   },
   "dependencies": {
-    "effect": "^3.19.4",
+    "effect": "^3.19.8",
     "highlight.js": "^11.11.1",
-    "marked": "^16.4.1",
+    "marked": "^17.0.1",
     "semver": "^7.7.3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251014.0",
-    "@types/node": "^24.9.2",
+    "@cloudflare/workers-types": "^4.20251128.0",
+    "@types/node": "^24.10.1",
     "drizzle-orm": "^0.44.7",
-    "hono": "^4.10.4",
-    "tsup": "^8.5.0",
+    "hono": "^4.10.7",
+    "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.5"
+    "vitest": "^4.0.14"
   },
   "engines": {
     "node": ">=18.0.0"
