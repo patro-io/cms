@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.12
+
+### Patch Changes
+
+- - Use wrangler d1 execute
+  - Remove seed script
+  - Use SQL file for execution
+
 ## 0.1.0-beta.11
 
 ### Patch Changes
