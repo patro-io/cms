@@ -38,10 +38,14 @@ export interface ProfilePageData {
 }
 
 export function renderAvatarImage(avatarUrl: string | undefined, firstName: string, lastName: string): string {
+  // Defensive: fallback pokud jsou jména undefined/prázdná
+  const firstInitial = firstName && firstName.length > 0 ? firstName.charAt(0).toUpperCase() : '?'
+  const lastInitial = lastName && lastName.length > 0 ? lastName.charAt(0).toUpperCase() : '?'
+  
   return `<div id="avatar-image-container" class="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden bg-gradient-to-br from-cyan-400 to-purple-400 flex items-center justify-center ring-4 ring-zinc-950/5 dark:ring-white/10">
     ${avatarUrl
       ? `<img src="${avatarUrl}" alt="Profile picture" class="w-full h-full object-cover">`
-      : `<span class="text-2xl font-bold text-white">${firstName.charAt(0)}${lastName.charAt(0)}</span>`
+      : `<span class="text-2xl font-bold text-white">${firstInitial}${lastInitial}</span>`
     }
   </div>`
 }

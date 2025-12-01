@@ -274,6 +274,23 @@ export function createPatroCMSApp(config: PatroCMSConfig = {}): PatroCMSApp {
   
   app.use('/admin/users/*', requireAuth())
   app.use('/admin/users/*', i18nMiddleware())
+  
+  app.use('/admin/profile', requireAuth())
+  app.use('/admin/profile/*', requireAuth())
+  app.use('/admin/profile', i18nMiddleware())
+  app.use('/admin/profile/*', i18nMiddleware())
+  
+  app.use('/admin/activity-logs/*', requireAuth())
+  app.use('/admin/activity-logs/*', i18nMiddleware())
+  
+  app.use('/admin/invite-user', requireAuth())
+  app.use('/admin/invite-user', i18nMiddleware())
+  
+  app.use('/admin/resend-invitation/*', requireAuth())
+  app.use('/admin/resend-invitation/*', i18nMiddleware())
+  
+  app.use('/admin/cancel-invitation/*', requireAuth())
+  app.use('/admin/cancel-invitation/*', i18nMiddleware())
 
   // ============================================================================
   // Core routes (now pure business logic without middleware)
