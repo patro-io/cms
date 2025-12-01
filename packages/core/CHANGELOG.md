@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.3
+
+### Patch Changes
+
+- Fixed 500 error on /admin/profile by using correct Hono middleware patterns ('/admin/profile' + '/admin/profile/_' instead of '/admin/profile_')
+
 ## 0.1.0-beta.2
 
 ### Patch Changes
