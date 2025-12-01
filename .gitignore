@@ -90,3 +90,4 @@ internal-docs/
 PUBLISHING-OLD.md
 test-field-edit-old.js
 
+.vscode/settings.json
