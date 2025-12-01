@@ -9,14 +9,14 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "patro-cms-db",
+      "database_name": "patrocms-db",
       "migrations_dir": "packages/core/migrations"
     }
   ],
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
-      "bucket_name": "patro-cms-media"
+      "bucket_name": "patrocms-media"
     }
   ],
   "kv_namespaces": [
