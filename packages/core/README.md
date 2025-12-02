@@ -62,7 +62,7 @@ const program = Effect.gen(function* (_) {
   const db = yield* _(DatabaseService)
   const auth = yield* _(AuthService)
   
-  // All operations return Effect types
+  // All operations return Effect Types
   const users = yield* _(db.query('SELECT * FROM users'))
   const token = yield* _(auth.generateToken(userId, email, role))
   
