@@ -617,7 +617,7 @@ PatroCMS is **optimized for edge computing**:
 
 ## 🤝 Contributing
 
-We welcome contributions! PatroCMS follows **functional programming principles**:
+We welcome contributions! Patro follows **functional programming principles**:
 
 - All services must be Effect-based
 - Use Effect Schema for validation (not Zod)
